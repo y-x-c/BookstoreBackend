@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+    <title>
+        Bookstore
+    </title>
+    <style type="text/css">
+        div.container{
+            width: 100%;
+            -webkit-box-sizing: border-box;
+
+            border: 1px solid lightgray;
+        }
+
+        .container div{
+            -webkit-box-sizing: border-box;
+        }
+
+        div.header{
+            background: lightgray;
+            border: solid lightgray 1px;
+            padding: 1em;
+            clear: left;
+        }
+
+        .header h1{
+            color: #ffffff;
+        }
+
+        div.sidebar{
+            padding: 1em;
+            width: 20%;
+            float: left;
+        }
+
+        .sidebar p{
+            color: gray;
+        }
+
+        div.content{
+            padding: 1em;
+            border-left: solid lightgray 1px;
+            width: 80%;
+            float: left;
+        }
+
+        .content a{
+            color: gray;
+        }
+
+        .content a:hover{
+            color: white;
+            background: deepskyblue;
+        }
+
+        .content li{
+            color: gray;
+        }
+
+        div.footer{
+            clear: left;
+            background: lightgray;
+            color: white;
+            border: solid lightgray 1px;
+            padding-left: 0.5em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="header">Welcome</h1>
+        </div>
+
+        <div class="sidebar">
+            <p>This is a sidebar</p>
+        </div>
+
+        <div class="content">
+            <ul>
+                <li><a href="orders.jsp">orders.jsp</a></li>
+                <li><a href="orders.sql">orders.sql</a></li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>A simple page, June 5 '15</p>
+        </div>
+    </div>
+</body>
+</html>
