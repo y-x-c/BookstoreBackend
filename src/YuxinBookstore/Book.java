@@ -4,15 +4,12 @@ package YuxinBookstore;
  * Created by Orthocenter on 5/12/15.
  */
 
-import java.awt.*;
 import java.io.*;
-import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.ResultSet;
-import java.sql.Time;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Timer;
-
+import javax.json.*;
 
 public class Book {
 
@@ -209,19 +206,25 @@ public class Book {
         }
     }
 
-//    public static ArrayList<String> showDetailsDesc(final String row) {
-//        System.out.println(row);
-//    }
-
     public static void showDetails(final int cid, final String isbn) {
-        Connector con = Bookstore.con;
+
+    }
+
+    public static String details(final int cid, final String isbn) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        Connector con = null;
+
         try {
-            con.newStatement();
-        } catch(Exception e) {
-            return ;
+            con = new Connector();
+            System.err.println("Connected to the database.");
+        } catch (Exception e) {
+            System.err.println("Cannot connect to the database.");
+            System.err.println(e.getMessage());
         }
 
-        String sql = "SELECT * FROM Book B NATURAL JOIN Publisher P NATURAL JOIN Author A"
+
+        // get details
+        String sql = "SELECT * FROM Book B NATURAL JOIN Publisher P"
                         + " WHERE isbn = " + isbn;
 
         ResultSet rs = null;
@@ -230,224 +233,66 @@ public class Book {
         } catch(Exception e) {
             System.out.println("Failed to get details");
             System.err.println(e.getMessage());
-            return ;
+            return null;
         }
 
-        ArrayList<MenuItem> menuItems = new ArrayList<MenuItem>();
+        JsonObjectBuilder book = Json.createObjectBuilder();
 
         try {
             rs.next();
 
-            final String title = rs.getString("title"),
-                    publisher = rs.getString("P.pubname"), pubdate = rs.getString("pubdate"),
-                    format = rs.getString("format"), price = rs.getString("price"),
-                    copies = rs.getString("copies"), summary = rs.getString("summary");
-
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    ArrayList<String> descs = new ArrayList<String>();
-                    descs.add("Title");
-                    descs.add(title);
-                    return descs;
-                }
-
-                @Override
-                public void run() {
-
-                }
-            });
-
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    ArrayList<String> descs = new ArrayList<String>();
-                    descs.add("Publisher");
-                    descs.add(publisher);
-                    return descs;
-                }
-
-                @Override
-                public void run() {
-
-                }
-            });
-
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    ArrayList<String> descs = new ArrayList<String>();
-                    descs.add("Publish date");
-                    descs.add(pubdate);
-                    return descs;
-                }
-
-                @Override
-                public void run() {
-
-                }
-            });
-
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    ArrayList<String> descs = new ArrayList<String>();
-                    descs.add("Format");
-                    descs.add(format);
-                    return descs;
-                }
-
-                @Override
-                public void run() {
-
-                }
-            });
-
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    ArrayList<String> descs = new ArrayList<String>();
-                    descs.add("Price");
-                    descs.add(price);
-                    return descs;
-                }
-
-                @Override
-                public void run() {
-
-                }
-            });
-
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    ArrayList<String> descs = new ArrayList<String>();
-                    descs.add("copies");
-                    descs.add(copies);
-                    return descs;
-                }
-
-                @Override
-                public void run() {
-
-                }
-            });
-
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    ArrayList<String> descs = new ArrayList<String>();
-                    descs.add("summary");
-                    descs.add(summary == null ? "" : summary.replace("\n", " "));
-                    return descs;
-                }
-
-                @Override
-                public void run() {
-
-                }
-            });
-
-            int[] maxSizes = {30, 100};
-            MenuDisplay.show(menuItems, null, maxSizes, null, true);
-
+            book.add("ISBN", isbn);
+            String title = rs.getString("title");
+            book.add("title", title);
+            String subtitle = rs.getString("subtitle");
+            book.add("subtitle", subtitle);
+            double price = rs.getDouble("price");
+            book.add("price", price);
+            int amount = rs.getInt("copies");
+            book.add("amount", amount);
+            String pubdate = rs.getString("pubdate");
+            book.add("pubdate", pubdate);
+            String format = rs.getString("format");
+            book.add("format", format);
+            String keyword = rs.getString("keyword");
+            book.add("keyword", keyword);
+            String subject = rs.getString("subject");
+            book.add("subject", subject);
+            String summary = rs.getString("summary");
+            book.add("summary", summary);
+            int p_id = rs.getInt("pid");
+            book.add("publisher", p_id);
         } catch (Exception e) {
-            System.out.println("Failed to print details");
-            System.err.println(e.getMessage());
+            System.err.println("Failed to add details of this book into result");
+            System.err.println(e);
+            return null;
         }
 
+        // get authors info
         sql = "SELECT * FROM WrittenBy W NATURAL JOIN Author WHERE W.isbn = '" + isbn + "'";
-        //System.err.println(sql);
+
         try {
             rs = con.stmt.executeQuery(sql);
         } catch(Exception e) {
             System.out.println("Failed to get author(s)");
             System.err.println(e.getMessage());
         }
-        try {
-            menuItems = new ArrayList<MenuItem>();
 
+        try {
+            JsonArrayBuilder authors = Json.createArrayBuilder();
             while(rs.next()) {
-                final String authname = rs.getString("authname");
-
-                menuItems.add(new MenuItem() {
-                    @Override
-                    public ArrayList<String> getDescs() {
-                        ArrayList<String> descs = new ArrayList<String>();
-                        descs.add(authname);
-                        return descs;
-                    }
-
-                    @Override
-                    public void run() {
-
-                    }
-                });
-
+                int auth_id = rs.getInt("authid");
+                authors.add(auth_id);
             }
-
-            String[] headers = {"Author"};
-            int[] maxSizes = {30};
-            MenuDisplay.show(menuItems, headers, maxSizes, null, false);
-
+            book.add("authors", authors);
         } catch (Exception e) {
-            System.out.println("Failed to print author(s)");
+            System.out.println("Failed to add author(s) into result");
             System.err.println(e.getMessage());
         }
 
-        if(cid == -1) return;
+        result.add("book", book);
 
-        try {
-            menuItems = new ArrayList<MenuItem>();
-
-            menuItems.add(new MenuItem() {
-                public ArrayList<String> getDescs() {
-                    return Order.add2CartDescs();
-                }
-                public void run() {
-                    Order.add2Cart(cid, isbn);
-                }
-            });
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    return Book.showSuggestionsDescs();
-                }
-
-                @Override
-                public void run() {
-                    Book.showSuggestions(isbn);
-                }
-            });
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    return Feedback.recordDescs();
-                }
-
-                @Override
-                public void run() {
-                    Feedback.record(cid, isbn);
-                }
-            });
-            menuItems.add(new MenuItem() {
-                @Override
-                public ArrayList<String> getDescs() {
-                    return Feedback.showFeedbacksDescs();
-                }
-
-                @Override
-                public void run() {
-                    Feedback.showFeedbacks(isbn, cid, 100);
-                }
-            });
-
-            int[] maxSizes = {50};
-            MenuDisplay.chooseAndRun(menuItems, null, maxSizes, null, false);
-        } catch(Exception e) {
-            System.out.println("Failed to show more options");
-            System.err.println(e.getMessage());
-        }
+        return result.build().toString();
     }
 
     public static ArrayList<String> addBookDescs() {
