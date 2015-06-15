@@ -10,11 +10,12 @@
 <%@ page language="java" import="YuxinBookstore.*" %>
 
 <%
+    response.setHeader("Access-Control-Allow-Origin", "*");
+
     String verb = request.getMethod().toUpperCase();
     String URI = request.getRequestURI();
     String baseURI = "/api/";
     String[] dirs = URI.substring(baseURI.length(), URI.length()).split("/");
-
 
     if(dirs.length == 2 && dirs[0].equals("books") && verb.equals("GET")) {
         System.err.println("Forward to Book.details() ");

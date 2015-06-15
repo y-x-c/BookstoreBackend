@@ -222,7 +222,6 @@ public class Book {
             System.err.println(e.getMessage());
         }
 
-
         // get details
         String sql = "SELECT * FROM Book B NATURAL JOIN Publisher P"
                         + " WHERE isbn = " + isbn;
@@ -260,8 +259,8 @@ public class Book {
             book.add("subject", subject);
             String summary = rs.getString("summary");
             book.add("summary", summary);
-            int p_id = rs.getInt("pid");
-            book.add("publisher", p_id);
+            int pid = rs.getInt("pid");
+            book.add("publisher", pid);
         } catch (Exception e) {
             System.err.println("Failed to add details of this book into result");
             System.err.println(e);
@@ -281,8 +280,8 @@ public class Book {
         try {
             JsonArrayBuilder authors = Json.createArrayBuilder();
             while(rs.next()) {
-                int auth_id = rs.getInt("authid");
-                authors.add(auth_id);
+                int authid = rs.getInt("authid");
+                authors.add(authid);
             }
             book.add("authors", authors);
         } catch (Exception e) {
