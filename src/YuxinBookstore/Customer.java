@@ -4,12 +4,74 @@
 
 package YuxinBookstore;
 
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObjectBuilder;
 import java.awt.*;
 import java.io.*;
 import java.sql.*;
 import java.util.ArrayList;
 
 public class Customer {
+
+    public static String details(final int cid) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonObjectBuilder customer = Json.createObjectBuilder();
+        Connector con = null;
+
+        try {
+            con = new Connector();
+            System.err.println("Connected to the database.");
+        } catch (Exception e) {
+            System.err.println("Cannot connect to the database.");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        // get details
+        String sql = "SELECT * FROM Customer C"
+                + " WHERE cid = " + cid;
+
+        ResultSet rs = null;
+        try {
+            rs = con.stmt.executeQuery(sql);
+
+            rs.next();
+            customer.add("id", cid);
+            customer.add("username", rs.getString("username"));
+            customer.add("name", rs.getString("name"));
+            String email = rs.getString("email");
+            customer.add("email", email == null ? "" : email);
+            String phone = rs.getString("phone");
+            customer.add("phone", phone == null ? "" : phone);
+        } catch(Exception e) {
+            System.out.println("Failed to add details");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        try {
+            sql = "SELECT orderid FROM Orders WHERE cid = " + cid;
+            rs = con.stmt.executeQuery(sql);
+
+            JsonArrayBuilder orders = Json.createArrayBuilder();
+            while(rs.next()) {
+                orders.add(rs.getInt("orderid"));
+            }
+
+            customer.add("orders", orders);
+        } catch (Exception e) {
+            System.out.println("Failed to add orders");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        result.add("customer", customer);
+        return result.build().toString();
+    }
 
     public static ArrayList<String> mainMenuDescs() {
         ArrayList<String> descs = new ArrayList<String>();

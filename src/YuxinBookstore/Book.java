@@ -4,14 +4,182 @@ package YuxinBookstore;
  * Created by Orthocenter on 5/12/15.
  */
 
+import com.sun.media.sound.UlawCodec;
+import org.omg.IOP.TAG_MULTIPLE_COMPONENTS;
+
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import javax.json.*;
+import javax.rmi.CORBA.Util;
 
 public class Book {
+    public static String details(final String isbn) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        Connector con = null;
+
+        try {
+            con = new Connector();
+            System.err.println("Connected to the database.");
+        } catch (Exception e) {
+            System.err.println("Cannot connect to the database.");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        // get details
+        String sql = "SELECT * FROM Book B"
+                + " WHERE isbn = " + isbn;
+
+        ResultSet rs = null;
+        try {
+            rs = con.stmt.executeQuery(sql);
+        } catch(Exception e) {
+            System.out.println("Failed to get details");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
+        JsonObjectBuilder book = Json.createObjectBuilder();
+
+        try {
+            rs.next();
+
+            book.add("ISBN", isbn);
+            String title = rs.getString("title");
+            book.add("title", title);
+            String subtitle = rs.getString("subtitle");
+            book.add("subtitle", subtitle == null ? "" : subtitle);
+            double price = rs.getDouble("price");
+            book.add("price", price);
+            int amount = rs.getInt("copies");
+            book.add("amount", amount);
+            String pubdate = rs.getString("pubdate");
+            book.add("pubdate", pubdate == null ? "" : pubdate);
+            String format = rs.getString("format");
+            book.add("format", format == null ? "" : format);
+            String keyword = rs.getString("keyword");
+            book.add("keyword", keyword == null ? "" : format);
+            String subject = rs.getString("subject");
+            book.add("subject", subject == null ? "" : subject);
+            String summary = rs.getString("summary");
+            book.add("summary", summary == null ? "" : summary);
+            int pid = rs.getInt("pid");
+            book.add("publisher", pid);
+        } catch (Exception e) {
+            System.err.println("Failed to add details of this book into result");
+            System.err.println(e);
+
+            return null;
+        }
+
+        // get authors info
+        sql = "SELECT * FROM WrittenBy W WHERE W.isbn = '" + isbn + "'";
+
+        try {
+            rs = con.stmt.executeQuery(sql);
+        } catch(Exception e) {
+            System.out.println("Failed to get author(s)");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        try {
+            JsonArrayBuilder authors = Json.createArrayBuilder();
+            while(rs.next()) {
+                int authid = rs.getInt("authid");
+                authors.add(authid);
+            }
+            book.add("authors", authors);
+        } catch (Exception e) {
+            System.out.println("Failed to add author(s) into result");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        try {
+            sql = "SELECT fid FROM Feedback WHERE isbn = '" + isbn + "'";
+
+            JsonArrayBuilder feedbacks = Json.createArrayBuilder();
+            rs = con.stmt.executeQuery(sql);
+            while(rs.next()) {
+                feedbacks.add(rs.getInt("fid"));
+            }
+
+            book.add("feedbacks", feedbacks);
+        } catch (Exception e) {
+            System.out.println("Failed to add feedback(s) into result");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        result.add("book", book);
+
+        return result.build().toString();
+    }
+
+    public static String add(JsonObject payload) {
+        JsonObject book = payload.getJsonObject("book");
+        JsonObjectBuilder newBook = Json.createObjectBuilder();
+        JsonObjectBuilder result = Json.createObjectBuilder();
+
+        try {
+            String isbn = book.getString("ISBN");
+            String title = book.getString("title");
+            int pid = Integer.parseInt(book.getString("publisher"));
+            int copies = book.getInt("amount");
+            double price = book.getJsonNumber("price").doubleValue();
+
+            String pubdate = book.getString("pubdate").split("T")[0];
+            String format = book.isNull("format") ? null : book.getString("format");
+            String summary = book.isNull("summary") ? null : book.getString("summary");
+            String subject = book.isNull("subject") ? null : book.getString("subject");
+            String keyword = book.isNull("keyword") ? null : book.getString("keyword");;
+            String subtitle = book.isNull("subtitle") ? null : book.getString("subtitle");;
+
+            String sql = "INSERT INTO Book (isbn, title, pid, copies, price, pubdate, " +
+                    "format, summary, subject, keyword, subtitle) VALUES ";
+            sql += "('" + isbn + "','" + title + "'," + pid + "," + copies + "," + price + ",'" + pubdate + "',";
+            sql += Utility.genStringAttr(format, ",");
+            sql += Utility.genStringAttr(summary, ",");
+            sql += Utility.genStringAttr(subject, ",");
+            sql += Utility.genStringAttr(keyword, ",");
+            sql += Utility.genStringAttr(subtitle, "");
+            sql += ")";
+
+//            System.err.println(sql);
+            Connector con = new Connector();
+            con.stmt.executeUpdate(sql);
+
+            newBook.add("ISBN", isbn);
+
+            sql = "INSERT INTO WrittenBy (isbn, authid) VALUES ";
+            boolean first = true;
+            for(JsonValue authid : book.getJsonArray("authors")) {
+                if(!first) sql += ','; else first = false;
+                String _authid = authid.toString();
+                _authid = _authid.substring(1, _authid.length() - 1);
+                sql += "('" + isbn + "'," + _authid + ")";
+            }
+
+            con.stmt.executeUpdate(sql);
+
+        } catch (Exception e) {
+            System.out.println("Failed to add the book into database");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        result.add("book", newBook);
+        return result.build().toString();
+    }
 
     public static ResultSet search(int cid, String conditions) {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -210,89 +378,6 @@ public class Book {
 
     }
 
-    public static String details(final int cid, final String isbn) {
-        JsonObjectBuilder result = Json.createObjectBuilder();
-        Connector con = null;
-
-        try {
-            con = new Connector();
-            System.err.println("Connected to the database.");
-        } catch (Exception e) {
-            System.err.println("Cannot connect to the database.");
-            System.err.println(e.getMessage());
-        }
-
-        // get details
-        String sql = "SELECT * FROM Book B NATURAL JOIN Publisher P"
-                        + " WHERE isbn = " + isbn;
-
-        ResultSet rs = null;
-        try {
-            rs = con.stmt.executeQuery(sql);
-        } catch(Exception e) {
-            System.out.println("Failed to get details");
-            System.err.println(e.getMessage());
-            return null;
-        }
-
-        JsonObjectBuilder book = Json.createObjectBuilder();
-
-        try {
-            rs.next();
-
-            book.add("ISBN", isbn);
-            String title = rs.getString("title");
-            book.add("title", title);
-            String subtitle = rs.getString("subtitle");
-            book.add("subtitle", subtitle);
-            double price = rs.getDouble("price");
-            book.add("price", price);
-            int amount = rs.getInt("copies");
-            book.add("amount", amount);
-            String pubdate = rs.getString("pubdate");
-            book.add("pubdate", pubdate);
-            String format = rs.getString("format");
-            book.add("format", format);
-            String keyword = rs.getString("keyword");
-            book.add("keyword", keyword);
-            String subject = rs.getString("subject");
-            book.add("subject", subject);
-            String summary = rs.getString("summary");
-            book.add("summary", summary);
-            int pid = rs.getInt("pid");
-            book.add("publisher", pid);
-        } catch (Exception e) {
-            System.err.println("Failed to add details of this book into result");
-            System.err.println(e);
-            return null;
-        }
-
-        // get authors info
-        sql = "SELECT * FROM WrittenBy W NATURAL JOIN Author WHERE W.isbn = '" + isbn + "'";
-
-        try {
-            rs = con.stmt.executeQuery(sql);
-        } catch(Exception e) {
-            System.out.println("Failed to get author(s)");
-            System.err.println(e.getMessage());
-        }
-
-        try {
-            JsonArrayBuilder authors = Json.createArrayBuilder();
-            while(rs.next()) {
-                int authid = rs.getInt("authid");
-                authors.add(authid);
-            }
-            book.add("authors", authors);
-        } catch (Exception e) {
-            System.out.println("Failed to add author(s) into result");
-            System.err.println(e.getMessage());
-        }
-
-        result.add("book", book);
-
-        return result.build().toString();
-    }
 
     public static ArrayList<String> addBookDescs() {
         ArrayList<String> descs = new ArrayList<String>();

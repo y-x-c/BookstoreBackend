@@ -1,5 +1,8 @@
 package YuxinBookstore;
 
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObjectBuilder;
 import javax.xml.transform.Result;
 import java.awt.*;
 import java.io.*;
@@ -14,6 +17,74 @@ import java.util.ArrayList;
 
 
 public class Order {
+
+    public static String details(final int orderid) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        Connector con = null;
+
+        try {
+            con = new Connector();
+            System.err.println("Connected to the database.");
+        } catch (Exception e) {
+            System.err.println("Cannot connect to the database.");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        JsonObjectBuilder order = Json.createObjectBuilder();
+
+        // get details
+        String sql = "SELECT * FROM Orders O"
+                + " WHERE orderid = " + orderid;
+
+        ResultSet rs = null;
+        try {
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+            order.add("id", orderid);
+            order.add("time", rs.getString("time"));
+            order.add("customer", rs.getInt("cid"));
+            order.add("address", rs.getInt("addrid"));
+        } catch(Exception e) {
+            System.out.println("Failed to added details");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        JsonArrayBuilder itemids = Json.createArrayBuilder();
+        JsonArrayBuilder items = Json.createArrayBuilder();
+        // get order-items
+        try {
+            sql = "SELECT * FROM ItemInOrder WHERE orderid = " + orderid;
+
+            rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                itemids.add(rs.getInt("id"));
+
+                JsonObjectBuilder item = Json.createObjectBuilder();
+                item.add("id", rs.getInt("id"));
+                item.add("order", rs.getInt("orderid"));
+                item.add("book", rs.getString("isbn"));
+                item.add("amount", rs.getInt("amount"));
+                item.add("price", rs.getDouble("price"));
+                items.add(item);
+            }
+
+            order.add("orderItems", itemids);
+        } catch (Exception e) {
+            System.out.println("Failed to added order items");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        result.add("order", order);
+        result.add("orderItems", items);
+        return result.build().toString();
+    }
 
     public static ArrayList<String> add2CartDescs() {
         ArrayList<String> descs = new ArrayList<String>();

@@ -4,11 +4,57 @@ package YuxinBookstore;
  * Created by Orthocenter on 5/17/15.
  */
 
+import javax.json.*;
+import javax.json.JsonObjectBuilder;
 import java.io.*;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
 public class Feedback {
+    public static String details(final int fid) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        Connector con = null;
+
+        try {
+            con = new Connector();
+            System.err.println("Connected to the database.");
+        } catch (Exception e) {
+            System.err.println("Cannot connect to the database.");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        // get details
+        String sql = "SELECT F.isbn, F.cid, F.score, F.comment, F.time, " +
+                "(SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness " +
+                "FROM Feedback F WHERE fid = " + fid;
+
+        ResultSet rs = null;
+        try {
+            rs = con.stmt.executeQuery(sql);
+
+            rs.next();
+            JsonObjectBuilder feedback = Json.createObjectBuilder();
+            feedback.add("id", fid);
+            feedback.add("isbn", rs.getString("F.isbn"));
+            feedback.add("customer", rs.getInt("F.cid"));
+            feedback.add("score", rs.getInt("F.score"));
+            String comment = rs.getString("F.comment");
+            feedback.add("comment", comment == null ? "" : comment);
+            feedback.add("time", rs.getString("F.time"));
+            feedback.add("usefulness", rs.getDouble("usefulness"));
+            result.add("feedback", feedback);
+        } catch(Exception e) {
+            System.out.println("Failed to added details into result");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        return result.build().toString();
+    }
+
     public static ArrayList<String> recordDescs() {
         ArrayList<String> descs = new ArrayList<String>();
         descs.add("Record your feedback for a book");

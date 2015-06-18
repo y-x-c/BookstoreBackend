@@ -1,9 +1,12 @@
 package YuxinBookstore;
 
+import javax.json.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
@@ -11,6 +14,149 @@ import java.util.ArrayList;
  * Created by Orthocenter on 5/14/15.
  */
 public class Publisher {
+
+    public static String details(final int pid) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        Connector con = null;
+
+        try {
+            con = new Connector();
+            System.err.println("Connected to the database.");
+        } catch (Exception e) {
+            System.err.println("Cannot connect to the database.");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        // get details
+        String sql = "SELECT * FROM Publisher P"
+                + " WHERE pid = " + pid;
+
+        ResultSet rs = null;
+        try {
+            rs = con.stmt.executeQuery(sql);
+        } catch(Exception e) {
+            System.out.println("Failed to get details");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        JsonObjectBuilder publisher = Json.createObjectBuilder();
+        try {
+            rs.next();
+
+            publisher.add("id", pid);
+            String name = rs.getString("pubname");
+            publisher.add("name", name);
+            String intro = rs.getString("intro");
+            publisher.add("intro", intro == null ? "" : intro);
+        } catch (Exception e) {
+            System.out.println("Failed to add details into result");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        //get books
+        sql = "SELECT * FROM Book B"
+                + " WHERE pid = " + pid;
+
+        try {
+            rs = con.stmt.executeQuery(sql);
+        } catch(Exception e) {
+            System.out.println("Failed to get details");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        try {
+            JsonArrayBuilder books = Json.createArrayBuilder();
+            while (rs.next()) {
+                books.add(rs.getString("isbn"));
+            }
+            publisher.add("books", books);
+
+        } catch (Exception e) {
+            System.out.println("Failed to add books into result");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        result.add("publisher", publisher);
+        return result.build().toString();
+    }
+
+    public static String add(JsonObject payload) {
+        JsonObject publisher = payload.getJsonObject("publisher");
+        String pubname = publisher.getString("name");
+        String intro = publisher.getString("intro");
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonObjectBuilder newPublisher = Json.createObjectBuilder();
+
+        try {
+            String sql = "INSERT INTO Publisher (pubname, intro) VALUES (";
+            sql += Utility.genStringAttr(pubname, ",");
+            sql += Utility.genStringAttr(intro, "");
+            sql += ")";
+
+            Connector con = new Connector();
+            con.newStatement();
+            con.stmt.execute(sql);
+
+            sql = "SELECT LAST_INSERT_ID() AS id";
+            ResultSet rs = con.stmt.executeQuery(sql);
+            rs.next();
+
+            newPublisher.add("id", rs.getString("id"));
+        } catch(Exception e) {
+            System.out.println("Failed to add publisher");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        result.add("publisher", newPublisher);
+        return result.build().toString();
+    }
+
+    public static String find(String name) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonArrayBuilder publishers = Json.createArrayBuilder();
+
+        String sql = "SELECT * FROM Publisher P WHERE P.pubname LIKE";
+        name = Utility.sanitize(name);
+        sql += "'%" + name + "%'";
+
+        try {
+            Connector con = new Connector();
+            con.newStatement();
+
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                JsonObjectBuilder publisher = Json.createObjectBuilder();
+                publisher.add("id", rs.getInt("pid"));
+                publisher.add("name", rs.getString("pubname"));
+                String intro = rs.getString("intro");
+                publisher.add("intro", intro == null ? "" : intro);
+                publishers.add(publisher);
+            }
+
+        } catch (Exception e) {
+            System.out.println("Failed to search author");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
+        result.add("publishers", publishers);
+        return result.build().toString();
+    }
+
+////////////////////////////////////////////////
     public static int choose() {
         int i = 0;
 

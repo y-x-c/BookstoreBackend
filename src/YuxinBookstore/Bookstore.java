@@ -1,4 +1,4 @@
- /**
+/**
  * Created by Orthocenter on 5/11/15.
  */
 
@@ -7,10 +7,10 @@
 
 package YuxinBookstore;
 
- import java.awt.*;
- import java.util.ArrayList;
+import java.awt.*;
+import java.util.ArrayList;
 
- public class Bookstore {
+public class Bookstore {
 
     public static Connector con = null;
 
@@ -23,4 +23,5 @@ package YuxinBookstore;
             System.err.println(e.getMessage());
         }
     }
+
 }

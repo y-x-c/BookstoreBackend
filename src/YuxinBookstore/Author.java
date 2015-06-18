@@ -1,5 +1,9 @@
 package YuxinBookstore;
 
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import java.io.*;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -98,6 +102,92 @@ public class Author {
             System.out.println(e.getMessage());
             return;
         }
+    }
+
+    public static String add(JsonObject payload) {
+        JsonObject publisher = payload.getJsonObject("author");
+        String authname = publisher.getString("name");
+        String intro = publisher.getString("intro");
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonObjectBuilder newAuthor = Json.createObjectBuilder();
+
+        try {
+            String sql = "INSERT INTO Author (authname, intro) VALUES (";
+            sql += Utility.genStringAttr(authname, ",");
+            sql += Utility.genStringAttr(intro, "");
+            sql += ")";
+
+            Connector con = new Connector();
+            con.newStatement();
+            con.stmt.execute(sql);
+
+            sql = "SELECT LAST_INSERT_ID() AS id";
+            ResultSet rs = con.stmt.executeQuery(sql);
+            rs.next();
+
+            newAuthor.add("id", rs.getString("id"));
+        } catch(Exception e) {
+            System.out.println("Failed to add author");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        result.add("author", newAuthor);
+        return result.build().toString();
+    }
+
+    public static String details(final int authid) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonObjectBuilder author = Json.createObjectBuilder();
+        Connector con = null;
+
+        try {
+            con = new Connector();
+            System.err.println("Connected to the database.");
+        } catch (Exception e) {
+            System.err.println("Cannot connect to the database.");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        String sql = "SELECT * FROM Author WHERE authid = " + authid;
+        try {
+            ResultSet rs = con.stmt.executeQuery(sql);
+            rs.next();
+            final String authname = rs.getString("authname");
+            final String intro = rs.getString("intro");
+
+
+            author.add("id", authid);
+            author.add("name", authname);
+            author.add("intro", intro);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        try {
+            sql = "SELECT * FROM WrittenBy W WHERE" +
+                    " W.authid = " + authid;
+
+            ResultSet rs = con.stmt.executeQuery(sql);
+            JsonArrayBuilder books = Json.createArrayBuilder();
+            while (rs.next()) {
+                final String isbn = rs.getString("W.isbn");
+                books.add(isbn);
+            }
+            author.add("books", books);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
+        result.add("author", author);
+        return result.build().toString();
     }
 
     public static int choose() {
