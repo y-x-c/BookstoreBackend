@@ -151,7 +151,7 @@ public class Book {
             sql += Utility.genStringAttr(subject, ",");
             sql += Utility.genStringAttr(keyword, ",");
             sql += Utility.genStringAttr(subtitle, "");
-            sql += ")";
+            sql += ") ON DUPLICATE KEY UPDATE copies=VALUES(copies)";
 
 //            System.err.println(sql);
             Connector con = new Connector();
@@ -167,6 +167,7 @@ public class Book {
                 _authid = _authid.substring(1, _authid.length() - 1);
                 sql += "('" + isbn + "'," + _authid + ")";
             }
+            sql += " ON DUPLICATE KEY UPDATE isbn=isbn";
 
             con.stmt.executeUpdate(sql);
 
@@ -181,6 +182,115 @@ public class Book {
         return result.build().toString();
     }
 
+    public static String simpleSearch(int cid, String all, String _orderBy) {
+        int orderBy = _orderBy == null ? 1 : Integer.parseInt(_orderBy);
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonArrayBuilder books = Json.createArrayBuilder();
+
+        try {
+            String[] keyWords = all.split(" ");
+
+            String conditions = "true";
+
+            for (String _keyWord : keyWords) {
+                System.err.println(_keyWord);
+                String keyWord = Utility.sanitize(_keyWord);
+                conditions += " AND (" + "B.title LIKE '%" + keyWord + "%' OR B.subtitle like '%" + keyWord +
+                        "%' OR A.authname like '%" + keyWord + "%' OR B.isbn like '%" + keyWord +
+                        "%' OR B.summary LIKE '%" + keyWord + "%' OR P.pubname LIKE '%" + keyWord +
+                        "%' OR B.keyword LIKE '%" + keyWord + "%' OR B.subject LIKE '%" + keyWord + "%'" + ") ";
+            }
+
+            Connector con = new Connector();
+
+            String sql = "SELECT * FROM Book B, Publisher P, WrittenBy W, Author A WHERE ";
+            sql += " B.pid = P.pid AND W.isbn = B.isbn AND A.authid = W.authid AND ";
+            sql += conditions;
+            sql += " GROUP BY B.isbn ";
+            if(orderBy == 0) {
+                sql += " ORDER BY pubdate ASC";
+            } else if(orderBy == 1) {
+                sql += " ORDER BY pubdate DESC";
+            } else if(orderBy == 2) {
+                sql += " ORDER BY (SELECT AVG(score) FROM Feedback F WHERE F.isbn = B.isbn)ASC";
+            } else if(orderBy == 3) {
+                sql += " ORDER BY (SELECT AVG(score) FROM Feedback F WHERE F.isbn = B.isbn)DESC";
+            } else if(orderBy == 4) {
+                sql += " ORDER BY (SELECT AVG(score) FROM Feedback F WHERE F.isbn = B.isbn AND " +
+                        "(F.cid = " + cid + " OR F.cid IN ( " +
+                        "SELECT T.cid2 FROM TrustRecords T WHERE T.trust = TRUE AND T.cid1 = " + cid + ")))ASC";
+            } else if(orderBy == 5) {
+                sql += " ORDER BY (SELECT AVG(score) FROM Feedback F WHERE F.isbn = B.isbn AND " +
+                        "(F.cid = " + cid + " OR F.cid IN ( " +
+                        "SELECT T.cid2 FROM TrustRecords T WHERE T.trust = TRUE AND T.cid1 = " + cid + ")))DESC";
+            }
+
+            ResultSet rs = con.stmt.executeQuery(sql);
+            Connector con2 = new Connector();
+            while (rs.next()) {
+                JsonObjectBuilder book = Json.createObjectBuilder();
+
+                String isbn = rs.getString("isbn");
+                book.add("ISBN", isbn);
+                String title = rs.getString("title");
+                book.add("title", title);
+                String subtitle = rs.getString("subtitle");
+                book.add("subtitle", subtitle == null ? "" : subtitle);
+                double price = rs.getDouble("price");
+                book.add("price", price);
+                int amount = rs.getInt("copies");
+                book.add("amount", amount);
+                String pubdate = rs.getString("pubdate");
+                book.add("pubdate", pubdate == null ? "" : pubdate);
+                String format = rs.getString("format");
+                book.add("format", format == null ? "" : format);
+                String keyword = rs.getString("keyword");
+                book.add("keyword", keyword == null ? "" : format);
+                String subject = rs.getString("subject");
+                book.add("subject", subject == null ? "" : subject);
+                String summary = rs.getString("summary");
+                book.add("summary", summary == null ? "" : summary);
+                int pid = rs.getInt("pid");
+                book.add("publisher", pid);
+
+                sql = "SELECT * FROM WrittenBy W WHERE W.isbn = '" + isbn + "'";
+                con2.newStatement();
+                ResultSet rs2 = con2.stmt.executeQuery(sql);
+
+                JsonArrayBuilder authors = Json.createArrayBuilder();
+                while(rs2.next()) {
+                    int authid = rs2.getInt("authid");
+                    authors.add(authid);
+                }
+                book.add("authors", authors);
+
+                sql = "SELECT fid FROM Feedback WHERE isbn = '" + isbn + "'";
+
+                JsonArrayBuilder feedbacks = Json.createArrayBuilder();
+                con2.newStatement();
+                System.err.println(sql);
+                rs2 = con2.stmt.executeQuery(sql);
+                while(rs2.next()) {
+                    feedbacks.add(rs2.getInt("fid"));
+                }
+
+                book.add("feedbacks", feedbacks);
+
+
+                books.add(book);
+            }
+
+        } catch(Exception e) {
+            System.out.println("Simple search failed");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
+        result.add("books", books);
+        return result.build().toString();
+    }
+
+    ////////////////////////////////////
     public static ResultSet search(int cid, String conditions) {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         Connector con = Bookstore.con;

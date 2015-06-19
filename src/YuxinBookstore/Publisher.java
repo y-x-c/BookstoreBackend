@@ -93,7 +93,7 @@ public class Publisher {
     public static String add(JsonObject payload) {
         JsonObject publisher = payload.getJsonObject("publisher");
         String pubname = publisher.getString("name");
-        String intro = publisher.getString("intro");
+        String intro = publisher.isNull("intro") ? null : publisher.getString("intro");
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonObjectBuilder newPublisher = Json.createObjectBuilder();
 

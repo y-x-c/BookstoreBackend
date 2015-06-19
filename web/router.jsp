@@ -6,7 +6,7 @@
   To change this template use File | Settings | File Templates.
 --%>
 
-<%@ page contentType="text/json; charset=UTF-8" language="java" %>
+<%@ page isErrorPage="true" contentType="text/json; charset=UTF-8" language="java" %>
 <%@ page language="java" import="YuxinBookstore.*" %>
 <%@ page import="java.io.InputStream" %>
 <%@ page import="javax.json.JsonReader" %>
@@ -21,6 +21,8 @@
     String baseURI = "/api/";
     String[] dirs = URI.substring(baseURI.length(), URI.length()).split("/");
     System.err.println(verb + " " + URI);
+
+    int sessionCid = -1;
 
         // /books/:ISBN
     if (dirs.length == 2 && dirs[0].equals("books") && verb.equals("GET")) {
@@ -138,6 +140,39 @@
         String result = Publisher.find(name);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+    } else if (dirs.length == 1 && dirs[0].equals("authors") && verb.equals("GET")) {
+        System.err.println("Forwarding to Author.find()");
+        String name = request.getParameter("name");
+
+        String result = Author.find(name);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+    } else if (dirs.length == 1 && dirs[0].equals("books") && verb.equals("GET")) {
+        System.err.println("Forwarding to Books.simpleSearch()");
+        String orderBy = request.getParameter("orderBy");
+        String all = request.getParameter("all");
+
+        String result = Book.simpleSearch(sessionCid, all, orderBy);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+    } else if (dirs.length == 2 && dirs[0].equals("books") && verb.equals("PUT")) {
+        System.err.println("Forwarding to Book.add()");
+        InputStream body = request.getInputStream();
+        JsonReader jsonReader = Json.createReader(body);
+        JsonObject payload = jsonReader.readObject();
+
+        String result = Book.add(payload);
+        if (result == null) {
+            response.sendError(response.SC_BAD_REQUEST);
         } else {
             out.println(result);
         }
