@@ -16,6 +16,67 @@ import javax.json.*;
 import javax.rmi.CORBA.Util;
 
 public class Book {
+    private static JsonObjectBuilder JSONBook(ResultSet rs, JsonObjectBuilder book) throws Exception {
+        String sql;
+
+        Connector con2 = new Connector();
+
+        String isbn = rs.getString("isbn");
+        book.add("ISBN", isbn);
+        String title = rs.getString("title");
+        book.add("title", title);
+        String subtitle = rs.getString("subtitle");
+        book.add("subtitle", subtitle == null ? "" : subtitle);
+        double price = rs.getDouble("price");
+        book.add("price", price);
+        int amount = rs.getInt("copies");
+        book.add("amount", amount);
+        String pubdate = rs.getString("pubdate");
+        book.add("pubdate", pubdate == null ? "" : pubdate);
+        String format = rs.getString("format");
+        book.add("format", format == null ? "" : format);
+        String keyword = rs.getString("keyword");
+        book.add("keyword", keyword == null ? "" : format);
+        String subject = rs.getString("subject");
+        book.add("subject", subject == null ? "" : subject);
+        String summary = rs.getString("summary");
+        book.add("summary", summary == null ? "" : summary);
+        int pid = rs.getInt("pid");
+        book.add("publisher", pid);
+
+        sql = "SELECT * FROM WrittenBy W WHERE W.isbn = '" + isbn + "'";
+        con2.newStatement();
+        ResultSet rs2 = con2.stmt.executeQuery(sql);
+
+        JsonArrayBuilder authors = Json.createArrayBuilder();
+        while(rs2.next()) {
+            int authid = rs2.getInt("authid");
+            authors.add(authid);
+        }
+        book.add("authors", authors);
+
+        sql = "SELECT fid FROM Feedback WHERE isbn = '" + isbn + "'";
+
+        JsonArrayBuilder feedbacks = Json.createArrayBuilder();
+        con2.newStatement();
+        rs2 = con2.stmt.executeQuery(sql);
+        while(rs2.next()) {
+            feedbacks.add(rs2.getInt("fid"));
+        }
+
+        book.add("feedbacks", feedbacks);
+
+        return book;
+    }
+
+    private static JsonObjectBuilder JSONBook(String ISBN, JsonObjectBuilder book) throws Exception{
+        Connector con = new Connector();
+        String sql = "SELECT * from Book where isbn = '" + ISBN + "'";
+        ResultSet rs = con.stmt.executeQuery(sql);
+        rs.next();
+        return JSONBook(rs, book);
+    }
+
     public static String details(final String isbn) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         Connector con = null;
@@ -48,73 +109,11 @@ public class Book {
         try {
             rs.next();
 
-            book.add("ISBN", isbn);
-            String title = rs.getString("title");
-            book.add("title", title);
-            String subtitle = rs.getString("subtitle");
-            book.add("subtitle", subtitle == null ? "" : subtitle);
-            double price = rs.getDouble("price");
-            book.add("price", price);
-            int amount = rs.getInt("copies");
-            book.add("amount", amount);
-            String pubdate = rs.getString("pubdate");
-            book.add("pubdate", pubdate == null ? "" : pubdate);
-            String format = rs.getString("format");
-            book.add("format", format == null ? "" : format);
-            String keyword = rs.getString("keyword");
-            book.add("keyword", keyword == null ? "" : format);
-            String subject = rs.getString("subject");
-            book.add("subject", subject == null ? "" : subject);
-            String summary = rs.getString("summary");
-            book.add("summary", summary == null ? "" : summary);
-            int pid = rs.getInt("pid");
-            book.add("publisher", pid);
+            book = JSONBook(rs, book);
+
         } catch (Exception e) {
             System.err.println("Failed to add details of this book into result");
             System.err.println(e);
-
-            return null;
-        }
-
-        // get authors info
-        sql = "SELECT * FROM WrittenBy W WHERE W.isbn = '" + isbn + "'";
-
-        try {
-            rs = con.stmt.executeQuery(sql);
-        } catch(Exception e) {
-            System.out.println("Failed to get author(s)");
-            System.err.println(e.getMessage());
-
-            return null;
-        }
-
-        try {
-            JsonArrayBuilder authors = Json.createArrayBuilder();
-            while(rs.next()) {
-                int authid = rs.getInt("authid");
-                authors.add(authid);
-            }
-            book.add("authors", authors);
-        } catch (Exception e) {
-            System.out.println("Failed to add author(s) into result");
-            System.err.println(e.getMessage());
-
-            return null;
-        }
-
-        try {
-            sql = "SELECT fid FROM Feedback WHERE isbn = '" + isbn + "'";
-
-            JsonArrayBuilder feedbacks = Json.createArrayBuilder();
-            rs = con.stmt.executeQuery(sql);
-            while(rs.next()) {
-                feedbacks.add(rs.getInt("fid"));
-            }
-
-            book.add("feedbacks", feedbacks);
-        } catch (Exception e) {
-            System.out.println("Failed to add feedback(s) into result");
-            System.err.println(e.getMessage());
 
             return null;
         }
@@ -228,56 +227,10 @@ public class Book {
             sql += " LIMIT " + limit;
 
             ResultSet rs = con.stmt.executeQuery(sql);
-            Connector con2 = new Connector();
-            while (rs.next()) {
+            while(rs.next()) {
                 JsonObjectBuilder book = Json.createObjectBuilder();
 
-                String isbn = rs.getString("isbn");
-                book.add("ISBN", isbn);
-                String title = rs.getString("title");
-                book.add("title", title);
-                String subtitle = rs.getString("subtitle");
-                book.add("subtitle", subtitle == null ? "" : subtitle);
-                double price = rs.getDouble("price");
-                book.add("price", price);
-                int amount = rs.getInt("copies");
-                book.add("amount", amount);
-                String pubdate = rs.getString("pubdate");
-                book.add("pubdate", pubdate == null ? "" : pubdate);
-                String format = rs.getString("format");
-                book.add("format", format == null ? "" : format);
-                String keyword = rs.getString("keyword");
-                book.add("keyword", keyword == null ? "" : format);
-                String subject = rs.getString("subject");
-                book.add("subject", subject == null ? "" : subject);
-                String summary = rs.getString("summary");
-                book.add("summary", summary == null ? "" : summary);
-                int pid = rs.getInt("pid");
-                book.add("publisher", pid);
-
-                sql = "SELECT * FROM WrittenBy W WHERE W.isbn = '" + isbn + "'";
-                con2.newStatement();
-                ResultSet rs2 = con2.stmt.executeQuery(sql);
-
-                JsonArrayBuilder authors = Json.createArrayBuilder();
-                while(rs2.next()) {
-                    int authid = rs2.getInt("authid");
-                    authors.add(authid);
-                }
-                book.add("authors", authors);
-
-                sql = "SELECT fid FROM Feedback WHERE isbn = '" + isbn + "'";
-
-                JsonArrayBuilder feedbacks = Json.createArrayBuilder();
-                con2.newStatement();
-//                System.err.println(sql);
-                rs2 = con2.stmt.executeQuery(sql);
-                while(rs2.next()) {
-                    feedbacks.add(rs2.getInt("fid"));
-                }
-
-                book.add("feedbacks", feedbacks);
-
+                book = JSONBook(rs, book);
 
                 books.add(book);
             }
@@ -289,6 +242,43 @@ public class Book {
         }
 
         result.add("books", books);
+        return result.build().toString();
+    }
+
+    public static String popular(int limit, int offset, String start, String end) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonArrayBuilder books = Json.createArrayBuilder();
+        JsonObjectBuilder sales = Json.createObjectBuilder();
+        String st = start.split("T")[0];
+        String ed = end.split("T")[0];
+
+        try {
+            String sql = "SELECT isbn, SUM(amount) as sales FROM ItemInOrder I, Orders O " +
+                    "WHERE I.orderid = O.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed +
+                    "' GROUP BY isbn ORDER BY SUM(amount) DESC";
+            sql += " LIMIT " + limit + " OFFSET " + offset;
+            System.err.println(sql);
+
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                final String isbn = rs.getString("isbn");
+                final int _sales = rs.getInt("sales");
+
+                JsonObjectBuilder book = Json.createObjectBuilder();
+                book = JSONBook(isbn, book);
+                books.add(book);
+                sales.add(isbn, _sales);
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to query popular books");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
+        result.add("books", books);
+        result.add("sales", sales);
         return result.build().toString();
     }
 

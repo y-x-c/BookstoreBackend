@@ -24,8 +24,25 @@
 
     int sessionCid = -1;
 
+
+    if (dirs.length == 2 && dirs[0].equals("books") && dirs[1].equals("popular") && verb.equals("GET")) {
+        System.err.println("Forwarding to Author.degree()");
+        String start = request.getParameter("start");
+        String end = request.getParameter("end");
+        String _limit = request.getParameter("limit");
+        String _offset = request.getParameter("offset");
+        int limit, offset;
+        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+
+        String result = Book.popular(limit, offset, start, end);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
         // /books/:ISBN
-    if (dirs.length == 2 && dirs[0].equals("books") && verb.equals("GET")) {
+    } else if (dirs.length == 2 && dirs[0].equals("books") && verb.equals("GET")) {
         System.err.println("Forwarding to Book.details() ");
         String isbn = dirs[1];
 
