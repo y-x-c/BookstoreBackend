@@ -37,7 +37,7 @@
         }
 
         // /authors/:aid
-    } else if (dirs.length == 2 && dirs[0].equals("authors") && verb.equals("GET")) {
+    } else if (dirs.length == 2 && dirs[0].equals("authors") && !dirs[1].equals("degree") && verb.equals("GET")) {
         System.err.println("Forwarding to Author.details()");
         int authid = Integer.parseInt(dirs[1]);
 
@@ -136,8 +136,10 @@
     } else if (dirs.length == 1 && dirs[0].equals("publishers") && verb.equals("GET")) {
         System.err.println("Forwarding to Publisher.find()");
         String name = request.getParameter("name");
+        String _limit = request.getParameter("limit");
+        int limit = 5;
 
-        String result = Publisher.find(name);
+        String result = Publisher.find(limit, name);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
@@ -146,8 +148,11 @@
     } else if (dirs.length == 1 && dirs[0].equals("authors") && verb.equals("GET")) {
         System.err.println("Forwarding to Author.find()");
         String name = request.getParameter("name");
+        String _limit = request.getParameter("limit");
+        int limit = 5;
+        if (_limit != null) limit = Integer.parseInt(_limit);
 
-        String result = Author.find(name);
+        String result = Author.find(limit, name);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
@@ -157,8 +162,11 @@
         System.err.println("Forwarding to Books.simpleSearch()");
         String orderBy = request.getParameter("orderBy");
         String all = request.getParameter("all");
+        String _limit = request.getParameter("limit");
+        int limit = 5;
+        if (_limit != null) limit = Integer.parseInt(_limit);
 
-        String result = Book.simpleSearch(sessionCid, all, orderBy);
+        String result = Book.simpleSearch(sessionCid, limit, all, orderBy);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
@@ -173,6 +181,17 @@
         String result = Book.add(payload);
         if (result == null) {
             response.sendError(response.SC_BAD_REQUEST);
+        } else {
+            out.println(result);
+        }
+    } else if (dirs.length == 2 && dirs[0].equals("authors") && dirs[1].equals("degree") && verb.equals("GET")) {
+        System.err.println("Forwarding to Author.degree()");
+        String author1 = request.getParameter("author1");
+        String author2 = request.getParameter("author2");
+
+        String result = Author.degree(author1, author2);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
         } else {
             out.println(result);
         }

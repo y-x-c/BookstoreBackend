@@ -9,7 +9,7 @@ Description | HTTP method | URL | JAVA implementation | Note
 `获取作者详细信息` | GET | /api/authors/:auth_id | Author.deatils()
 获取热门作者列表 | GET | /api/authors | Author.showPopularAuthors()
 `搜索作者` | GET | /api/authors?name= | Author.find()
-查询两个作者之间的度 | GET | /api/authors/degree | Author.showDegreesOfSeperation()
+`查询两个作者之间的度` | GET | /api/authors/degree?author1=&author2= | Author.degree()
 获取热门出版社 | GET | /api/publishers
 `获取出版社详细信息` | GET | /api/publishers/:pid | Publisher.showDeatils()
 `搜索出版社` | GET | /api/publishers?name= | Publisher.find()

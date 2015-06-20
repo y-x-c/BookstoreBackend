@@ -123,13 +123,14 @@ public class Publisher {
         return result.build().toString();
     }
 
-    public static String find(String name) {
+    public static String find(int limit, String name) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonArrayBuilder publishers = Json.createArrayBuilder();
 
         String sql = "SELECT * FROM Publisher P WHERE P.pubname LIKE";
         name = Utility.sanitize(name);
         sql += "'%" + name + "%'";
+        sql += " LIMIT " + limit;
 
         try {
             Connector con = new Connector();

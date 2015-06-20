@@ -182,7 +182,7 @@ public class Book {
         return result.build().toString();
     }
 
-    public static String simpleSearch(int cid, String all, String _orderBy) {
+    public static String simpleSearch(int cid, int limit, String all, String _orderBy) {
         int orderBy = _orderBy == null ? 1 : Integer.parseInt(_orderBy);
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonArrayBuilder books = Json.createArrayBuilder();
@@ -224,6 +224,8 @@ public class Book {
                         "(F.cid = " + cid + " OR F.cid IN ( " +
                         "SELECT T.cid2 FROM TrustRecords T WHERE T.trust = TRUE AND T.cid1 = " + cid + ")))DESC";
             }
+
+            sql += " LIMIT " + limit;
 
             ResultSet rs = con.stmt.executeQuery(sql);
             Connector con2 = new Connector();
@@ -268,7 +270,7 @@ public class Book {
 
                 JsonArrayBuilder feedbacks = Json.createArrayBuilder();
                 con2.newStatement();
-                System.err.println(sql);
+//                System.err.println(sql);
                 rs2 = con2.stmt.executeQuery(sql);
                 while(rs2.next()) {
                     feedbacks.add(rs2.getInt("fid"));

@@ -99,13 +99,14 @@ public class Author {
         return result.build().toString();
     }
 
-    public static String find(String name) {
+    public static String find(int limit, String name) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonArrayBuilder authors = Json.createArrayBuilder();
 
         String sql = "SELECT * FROM Author A WHERE A.authname LIKE";
         name = Utility.sanitize(name);
         sql += "'%" + name + "%'";
+        sql += " LIMIT " + limit;
 
         try {
             Connector con = new Connector();
@@ -130,6 +131,46 @@ public class Author {
 
         result.add("authors", authors);
         return result.build().toString();
+    }
+
+    public static String degree(String authid1, String authid2) {
+        JsonObjectBuilder _result = Json.createObjectBuilder(); //wrapper
+        JsonObjectBuilder result = Json.createObjectBuilder();
+
+        try {
+            if(authid1.equals(authid2)) {
+                result.add("degree", 0);
+                return _result.add("result", result).build().toString();
+            }
+
+            String sql = "SELECT W1.isbn FROM WrittenBy W1, WrittenBy W2 WHERE W1.isbn = W2.isbn " +
+                    "AND W1.authid = " + authid1 + " AND W2.authid = " + authid2;
+
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            if(rs.next()) {
+                result.add("degree", 1);
+                return _result.add("result", result).build().toString();
+            }
+
+            sql = "SELECT W1.isbn, W4.isbn FROM WrittenBy W1, WrittenBy W2, WrittenBy W3, WrittenBy W4 WHERE " +
+                    "W1.isbn = W2.isbn AND W3.isbn = W4.isbn AND W1.authid = " + authid1 +
+                    " AND W2.authid = W3.authid AND W4.authid = " + authid2;
+            rs = con.stmt.executeQuery(sql);
+
+            if(rs.next()) {
+                result.add("degree", 2);
+                return _result.add("result", result).build().toString();
+            }
+
+            result.add("degree", 3);
+            return _result.add("result", result).build().toString();
+        } catch(Exception e) {
+            System.out.println("Failed to query degree of two author");
+            System.err.println(e.getMessage());
+            return null;
+        }
     }
 
     ////////////////////////////////////////////////
