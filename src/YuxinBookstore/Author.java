@@ -13,6 +13,26 @@ import java.util.ArrayList;
  */
 public class Author {
 
+    private static JsonObjectBuilder JSONAuthor(ResultSet rs, JsonObjectBuilder author) throws Exception{
+        final String authid = rs.getString("authid");
+        final String authname = rs.getString("authname");
+        final String intro = rs.getString("intro");
+
+        author.add("id", authid);
+        author.add("name", authname);
+        author.add("intro", intro == null ? "" : intro);
+
+        return author;
+    }
+
+    private static JsonObjectBuilder JSONAuthor(String authid, JsonObjectBuilder author) throws Exception{
+        Connector con = new Connector();
+        String sql = "SELECT * from Author where authid = '" + authid + "'";
+        ResultSet rs = con.stmt.executeQuery(sql);
+        rs.next();
+        return JSONAuthor(rs, author);
+    }
+
     public static String add(JsonObject payload) {
         JsonObject publisher = payload.getJsonObject("author");
         String authname = publisher.getString("name");
@@ -65,13 +85,8 @@ public class Author {
         try {
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
-            final String authname = rs.getString("authname");
-            final String intro = rs.getString("intro");
 
-
-            author.add("id", authid);
-            author.add("name", authname);
-            author.add("intro", intro);
+            author = JSONAuthor(rs, author);
         } catch (Exception e) {
             System.err.println(e.getMessage());
 
@@ -171,6 +186,43 @@ public class Author {
             System.err.println(e.getMessage());
             return null;
         }
+    }
+
+    public static String popular(int limit, int offset, String start, String end) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonArrayBuilder authors = Json.createArrayBuilder();
+        JsonObjectBuilder sales = Json.createObjectBuilder();
+        String st = start.split("T")[0];
+        String ed = end.split("T")[0];
+
+        try {
+            String sql = "SELECT W.authid, SUM(I.amount) as sales FROM ItemInOrder I, WrittenBy W, Orders O " +
+                    "WHERE I.isbn = W.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed +
+                    "' GROUP BY W.authid ORDER BY SUM(I.amount) DESC";
+
+            sql += " LIMIT " + limit + " OFFSET " + offset;
+
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                final String authid = rs.getString("W.authid");
+
+                final int _sales = rs.getInt("sales");
+
+                JsonObjectBuilder author = Json.createObjectBuilder();
+                author = JSONAuthor(authid, author);
+                authors.add(author);
+
+                sales.add(authid, _sales);
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to query popular authors");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
+        return result.add("authors", authors).add("sales", sales).build().toString();
     }
 
     ////////////////////////////////////////////////

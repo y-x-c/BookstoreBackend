@@ -257,7 +257,7 @@ public class Book {
                     "WHERE I.orderid = O.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed +
                     "' GROUP BY isbn ORDER BY SUM(amount) DESC";
             sql += " LIMIT " + limit + " OFFSET " + offset;
-            System.err.println(sql);
+//            System.err.println(sql);
 
             Connector con = new Connector();
             ResultSet rs = con.stmt.executeQuery(sql);
