@@ -22,7 +22,8 @@ Description | HTTP method | URL | JAVA implementation | Note
 最trusted的用户 | GET | /api/customers/trusted | Customer.trustedUsers() | *ADMIN*
 `添加图书` | POST | /api/books | Book.add() | *ADMIN*
 `添加作者` | POST | /api/authors | Author.add() | *ADMIN*
-`添加用户` | POST | /api/customers | Customer.signupMenu()
+`添加出版社` | POST | /api/publisher | Publisher.add() | *ADMIN*
+添加用户 | POST | /api/customers | Customer.signupMenu()
 `补货` | PUT | /api/books/:isbn | Book.add() | *ADMIN*
 Declare用户 | POST | /api/customers/declare | Customer.declareUser() | *LOGINED*
 评价一本书 | POST | /api/books/:isbn/feedbacks | Feedback.record() | *LOGINED*

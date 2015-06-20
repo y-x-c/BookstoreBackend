@@ -13,59 +13,51 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class Customer {
+    private static JsonObjectBuilder JSONCustomer(ResultSet rs, JsonObjectBuilder customer) throws Exception{
+        final String cid = rs.getString("cid");
+
+        customer.add("id", cid);
+        customer.add("username", rs.getString("username"));
+        customer.add("name", rs.getString("name"));
+        String email = rs.getString("email");
+        customer.add("email", email == null ? "" : email);
+        String phone = rs.getString("phone");
+        customer.add("phone", phone == null ? "" : phone);
+
+
+        Connector con = new Connector();
+        String sql = "SELECT orderid FROM Orders WHERE cid = " + cid;
+        rs = con.stmt.executeQuery(sql);
+
+        JsonArrayBuilder orders = Json.createArrayBuilder();
+        while(rs.next()) {
+            orders.add(rs.getInt("orderid"));
+        }
+
+        customer.add("orders", orders);
+
+        return customer;
+    }
+
+    private static JsonObjectBuilder JSONCustomer(int cid, JsonObjectBuilder customer) throws Exception{
+        Connector con = new Connector();
+        String sql = "SELECT * from Customer where cid = '" + cid + "'";
+        ResultSet rs = con.stmt.executeQuery(sql);
+        rs.next();
+        return JSONCustomer(rs, customer);
+    }
+
 
     public static String details(final int cid) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonObjectBuilder customer = Json.createObjectBuilder();
-        Connector con = null;
+
 
         try {
-            con = new Connector();
-            System.err.println("Connected to the database.");
+            customer = JSONCustomer(cid, customer);
         } catch (Exception e) {
-            System.err.println("Cannot connect to the database.");
+            System.out.println("Failed to query customers details");
             System.err.println(e.getMessage());
-
-            return null;
-        }
-
-        // get details
-        String sql = "SELECT * FROM Customer C"
-                + " WHERE cid = " + cid;
-
-        ResultSet rs = null;
-        try {
-            rs = con.stmt.executeQuery(sql);
-
-            rs.next();
-            customer.add("id", cid);
-            customer.add("username", rs.getString("username"));
-            customer.add("name", rs.getString("name"));
-            String email = rs.getString("email");
-            customer.add("email", email == null ? "" : email);
-            String phone = rs.getString("phone");
-            customer.add("phone", phone == null ? "" : phone);
-        } catch(Exception e) {
-            System.out.println("Failed to add details");
-            System.err.println(e.getMessage());
-
-            return null;
-        }
-
-        try {
-            sql = "SELECT orderid FROM Orders WHERE cid = " + cid;
-            rs = con.stmt.executeQuery(sql);
-
-            JsonArrayBuilder orders = Json.createArrayBuilder();
-            while(rs.next()) {
-                orders.add(rs.getInt("orderid"));
-            }
-
-            customer.add("orders", orders);
-        } catch (Exception e) {
-            System.out.println("Failed to add orders");
-            System.err.println(e.getMessage());
-
             return null;
         }
 
@@ -73,6 +65,74 @@ public class Customer {
         return result.build().toString();
     }
 
+
+    public static String trusted(int limit, int offset) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonArrayBuilder customers = Json.createArrayBuilder();
+        JsonObjectBuilder scores = Json.createObjectBuilder();
+
+        try {
+            String sql = "SELECT *, " +
+                    "(SELECT COUNT(*) FROM TrustRecords T1 WHERE T1.cid2 = C.cid AND T1.trust = 1) - (SELECT COUNT(*) FROM TrustRecords T2 WHERE T2.cid2 = C.cid AND T2.trust = 0) AS score " +
+                    "FROM Customer C ORDER BY " +
+                    "score DESC";
+            //System.err.println(sql);
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                final int cid = rs.getInt("C.cid"), score = rs.getInt("score");
+
+                JsonObjectBuilder customer = Json.createObjectBuilder();
+                customer = JSONCustomer(cid, customer);
+                customers.add(customer);
+
+                String _cid = Integer.toString(cid);
+                scores.add(_cid, score);
+            }
+        } catch(Exception e) {
+            System.out.println("Failed to query most trusted customers");
+            System.out.println(e.getMessage());
+            return null;
+        }
+
+        result.add("customers", customers).add("scores", scores);
+        return result.build().toString();
+    }
+
+    public static String useful(int limit, int offset) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonArrayBuilder customers = Json.createArrayBuilder();
+        JsonObjectBuilder ratings = Json.createObjectBuilder();
+
+        try {
+            String sql = "SELECT cid, AVG(rating) AS avgRating FROM Usefulness U GROUP BY U.cid ORDER BY avgRating DESC";
+
+            //System.err.println(sql);
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                final int cid = rs.getInt("cid"), rating = rs.getInt("avgRating");
+
+                JsonObjectBuilder customer = Json.createObjectBuilder();
+                customer = JSONCustomer(cid, customer);
+                customers.add(customer);
+
+                String _cid = Integer.toString(cid);
+                ratings.add(_cid, rating);
+            }
+        } catch(Exception e) {
+            System.out.println("Failed to query most useful customers");
+            System.out.println(e.getMessage());
+            return null;
+        }
+
+        result.add("customers", customers).add("ratings", ratings);
+        return result.build().toString();
+    }
+
+    ////////////////////////////////////////////
     public static ArrayList<String> mainMenuDescs() {
         ArrayList<String> descs = new ArrayList<String>();
         descs.add("For customer");

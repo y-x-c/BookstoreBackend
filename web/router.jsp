@@ -126,6 +126,37 @@
             out.println(result);
         }
 
+        // /customers/useful
+    } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("useful") && verb.equals("GET")) {
+        System.err.println("Forwarding to Customer.useful()");
+        String _limit = request.getParameter("limit");
+        String _offset = request.getParameter("offset");
+        int limit, offset;
+        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+
+        String result = Customer.useful(limit, offset);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+        // /customers/trusted
+    } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("trusted") && verb.equals("GET")) {
+        System.err.println("Forwarding to Customer.useful()");
+        String _limit = request.getParameter("limit");
+        String _offset = request.getParameter("offset");
+        int limit, offset;
+        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+
+        String result = Customer.trusted(limit, offset);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+
         // /customers/:cid
         // authentication required
     } else if (dirs.length == 2 && dirs[0].equals("customers") && verb.equals("GET")) {
