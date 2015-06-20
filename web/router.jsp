@@ -24,7 +24,7 @@
 
     int sessionCid = -1;
 
-
+        // /books/popular
     if (dirs.length == 2 && dirs[0].equals("books") && dirs[1].equals("popular") && verb.equals("GET")) {
         System.err.println("Forwarding to Book.popular()");
         String start = request.getParameter("start");
@@ -41,6 +41,7 @@
         } else {
             out.println(result);
         }
+
         // /books/:ISBN
     } else if (dirs.length == 2 && dirs[0].equals("books") && verb.equals("GET")) {
         System.err.println("Forwarding to Book.details() ");
@@ -52,6 +53,8 @@
         } else {
             out.println(result);
         }
+
+        // /authors/popular
     } else if (dirs.length == 2 && dirs[0].equals("authors") && dirs[1].equals("popular") && verb.equals("GET")) {
         System.err.println("Forwarding to Author.popular()");
         String start = request.getParameter("start");
@@ -68,7 +71,8 @@
         } else {
             out.println(result);
         }
-        // /authors/:aid
+
+        // /authors/:authid
     } else if (dirs.length == 2 && dirs[0].equals("authors") && !dirs[1].equals("degree") && verb.equals("GET")) {
         System.err.println("Forwarding to Author.details()");
         int authid = Integer.parseInt(dirs[1]);
@@ -79,6 +83,24 @@
         } else {
             out.println(result);
         }
+
+        // /publishers/popular
+    } else if (dirs.length == 2 && dirs[0].equals("publishers") && dirs[1].equals("popular") && verb.equals("GET")) {
+            System.err.println("Forwarding to Publisher.popular()");
+            String start = request.getParameter("start");
+            String end = request.getParameter("end");
+            String _limit = request.getParameter("limit");
+            String _offset = request.getParameter("offset");
+            int limit, offset;
+            if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+            if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+
+            String result = Publisher.popular(limit, offset, start, end);
+            if (result == null) {
+                response.sendError(response.SC_NOT_FOUND);
+            } else {
+                out.println(result);
+            }
 
         // /publishers/:pid
     } else if (dirs.length == 2 && dirs[0].equals("publishers") && verb.equals("GET")) {

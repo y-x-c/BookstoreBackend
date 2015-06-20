@@ -15,6 +15,27 @@ import java.util.ArrayList;
  */
 public class Publisher {
 
+    private static JsonObjectBuilder JSONPublisher(ResultSet rs, JsonObjectBuilder publisher) throws Exception{
+        final String pid = rs.getString("pid");
+        final String pubname = rs.getString("pubname");
+        final String intro = rs.getString("intro");
+
+        publisher.add("id", pid);
+        publisher.add("name", pubname);
+        publisher.add("intro", intro == null ? "" : intro);
+
+        return publisher;
+    }
+
+    private static JsonObjectBuilder JSONPublisher(String pid, JsonObjectBuilder publisher) throws Exception{
+        Connector con = new Connector();
+        String sql = "SELECT * from Publisher where pid = '" + pid + "'";
+        ResultSet rs = con.stmt.executeQuery(sql);
+        rs.next();
+        return JSONPublisher(rs, publisher);
+    }
+
+
     public static String details(final int pid) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         Connector con = null;
@@ -47,11 +68,7 @@ public class Publisher {
         try {
             rs.next();
 
-            publisher.add("id", pid);
-            String name = rs.getString("pubname");
-            publisher.add("name", name);
-            String intro = rs.getString("intro");
-            publisher.add("intro", intro == null ? "" : intro);
+            publisher = JSONPublisher(rs, publisher);
         } catch (Exception e) {
             System.out.println("Failed to add details into result");
             System.err.println(e.getMessage());
@@ -155,6 +172,43 @@ public class Publisher {
 
         result.add("publishers", publishers);
         return result.build().toString();
+    }
+
+    public static String popular(int limit, int offset, String start, String end) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonArrayBuilder publishers = Json.createArrayBuilder();
+        JsonObjectBuilder sales = Json.createObjectBuilder();
+        String st = start.split("T")[0];
+        String ed = end.split("T")[0];
+
+        try {
+            String sql = "SELECT B.pid, SUM(I.amount) as sales FROM ItemInOrder I, Book B, Orders O " +
+                    "WHERE I.isbn = B.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed +
+                    "' GROUP BY B.pid ORDER BY SUM(I.amount) DESC";
+
+            sql += " LIMIT " + limit + " OFFSET " + offset;
+
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                final String pid = rs.getString("B.pid");
+
+                final int _sales = rs.getInt("sales");
+
+                JsonObjectBuilder publisher = Json.createObjectBuilder();
+                publisher = JSONPublisher(pid, publisher);
+                publishers.add(publisher);
+
+                sales.add(pid, _sales);
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to query popular publishers");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
+        return result.add("publishers", publishers).add("sales", sales).build().toString();
     }
 
 ////////////////////////////////////////////////
