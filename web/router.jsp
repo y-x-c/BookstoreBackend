@@ -12,27 +12,68 @@
 <%@ page import="javax.json.JsonReader" %>
 <%@ page import="javax.json.Json" %>
 <%@ page import="javax.json.JsonObject" %>
+<%@ page import="javax.json.JsonObjectBuilder" %>
 
 <%
-    response.setHeader("Access-Control-Allow-Origin", "*");
-
     String verb = request.getMethod().toUpperCase();
     String URI = request.getRequestURI();
     String baseURI = "/api/";
     String[] dirs = URI.substring(baseURI.length(), URI.length()).split("/");
     System.err.println(verb + " " + URI);
 
-    int sessionCid = -1;
+    int sessionCid = (Integer)session.getAttribute("cid") == null ? -1 : (Integer)session.getAttribute("cid");
+    Boolean isAdmin = (Boolean)session.getAttribute("isAdmin") == null ? false : (Boolean)session.getAttribute("isAdmin");
+
+        // /customers/login
+    if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("login") && verb.equals("POST")) {
+        System.err.println("Forwarding to Customer.login()");
+        InputStream body = request.getInputStream();
+        JsonReader jsonReader = Json.createReader(body);
+        JsonObject payload = jsonReader.readObject();
+        JsonObjectBuilder result = Json.createObjectBuilder();
+
+        int cid = Customer.login(payload, result);
+
+        if(cid > 0) {
+            out.println(result.build().toString());
+            session.setAttribute("cid", cid);
+        } else {
+            response.sendError(response.SC_NOT_FOUND);
+            session.invalidate();
+        }
+
+        // /customers/logout
+    } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("logout") && verb.equals("POST")) {
+        System.err.println("cid: " + sessionCid + " logged out");
+        session.invalidate();
+
+        // /customers/signup
+    } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("signup") && verb.equals("POST")) {
+        System.err.println("Forwarding to Customer.signup()");
+        InputStream body = request.getInputStream();
+        JsonReader jsonReader = Json.createReader(body);
+        JsonObject payload = jsonReader.readObject();
+        JsonObjectBuilder result = Json.createObjectBuilder();
+
+        int cid = Customer.signup(payload, result);
+
+        if(cid > 0) {
+            out.println(result.build().toString());
+            session.setAttribute("cid", cid);
+        } else {
+            response.sendError(response.SC_NOT_FOUND);
+            session.invalidate();
+        }
 
         // /books/popular
-    if (dirs.length == 2 && dirs[0].equals("books") && dirs[1].equals("popular") && verb.equals("GET")) {
+    } else if (dirs.length == 2 && dirs[0].equals("books") && dirs[1].equals("popular") && verb.equals("GET")) {
         System.err.println("Forwarding to Book.popular()");
         String start = request.getParameter("start");
         String end = request.getParameter("end");
         String _limit = request.getParameter("limit");
         String _offset = request.getParameter("offset");
         int limit, offset;
-        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+        if (_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
         if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
 
         String result = Book.popular(limit, offset, start, end);
@@ -62,7 +103,7 @@
         String _limit = request.getParameter("limit");
         String _offset = request.getParameter("offset");
         int limit, offset;
-        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+        if (_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
         if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
 
         String result = Author.popular(limit, offset, start, end);
@@ -92,7 +133,7 @@
             String _limit = request.getParameter("limit");
             String _offset = request.getParameter("offset");
             int limit, offset;
-            if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+        if (_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
             if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
 
             String result = Publisher.popular(limit, offset, start, end);

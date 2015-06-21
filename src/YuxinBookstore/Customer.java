@@ -6,6 +6,7 @@ package YuxinBookstore;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import java.awt.*;
 import java.io.*;
@@ -130,6 +131,79 @@ public class Customer {
 
         result.add("customers", customers).add("ratings", ratings);
         return result.build().toString();
+    }
+
+    public static int login(JsonObject payload, JsonObjectBuilder result) {
+        JsonObject info = payload.getJsonObject("customer");
+        String username = info.getString("username");
+        String password = info.getString("password");
+        JsonObjectBuilder customer = Json.createObjectBuilder();
+//        JsonObjectBuilder result = Json.createObjectBuilder();
+
+        try {
+            Connector con = new Connector();
+
+            String sql = "SELECT cid FROM Customer WHERE";
+            sql += " username = \"" + username + "\"";
+            sql += " AND password = SHA1(\"" + password + "\")";
+
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            if(rs.next()) {
+                int cid = rs.getInt(1);
+                JSONCustomer(cid, customer);
+                result.add("customer", customer);
+                return cid;
+            } else {
+                return -1;
+            }
+
+        } catch(Exception e) {
+            System.out.println("Failed to validate");
+            System.err.println(e.getMessage());
+
+            return -1;
+        }
+    }
+
+    public static int signup(JsonObject payload, JsonObjectBuilder result) {
+        JsonObject info = payload.getJsonObject("customer");
+        String username = info.getString("username");
+        String password = info.getString("password");
+        String name = info.getString("name");
+        String email = info.getString("email");
+        String phone = info.getString("phone");
+        JsonObjectBuilder customer = Json.createObjectBuilder();
+
+        try {
+            Connector con = new Connector();
+
+            String sql = "INSERT INTO Customer (username, password, name, email, phone) VALUES (";
+            sql += "\"" + username + "\",";
+            sql += "SHA1(\"" + password + "\")" + ",";
+            sql += "\"" + name + "\",";
+            if(email.length() == 0) sql += "NULL,"; else sql += "\"" + email + "\",";
+            if(phone.length() == 0) sql += "NULL"; else sql += "\"" + phone + "\"";
+            sql += ")";
+
+            con.stmt.executeUpdate(sql);
+
+            sql = "SELECT cid FROM Customer WHERE username = \"" + username + "\"";
+
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            rs.next();
+            int cid = rs.getInt(1);
+
+            customer = JSONCustomer(cid, customer);
+            result.add("customer", customer);
+
+            return cid;
+        } catch(Exception e) {
+            System.out.println("Failed to signup");
+            System.err.println(e.getMessage());
+            return -1;
+        }
     }
 
     ////////////////////////////////////////////
