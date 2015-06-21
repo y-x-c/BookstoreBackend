@@ -18,8 +18,8 @@ Description | HTTP method | URL | JAVA implementation | Note
 (Deprecated: 已包含在用户的详细信息中)获取某个用户的所有Order | GET | /api/orders | Order.showAllOrder() | *LOGINED*
 `获取某个Order的详细信息` | GET | /api/orders/:oid | Order.showOrderDetails() | *LOGINED*
 显示购物车 | GET | **/api/carts/:cid** | Order.showCart() | *LOGINED*
-最Useful的用户 | GET | /api/customers/useful | Customer.usefulUsers() | *ADMIN*
-最trusted的用户 | GET | /api/customers/trusted | Customer.trustedUsers() | *ADMIN*
+`最Useful的用户` | GET | /api/customers/useful | Customer.usefulUsers() | *ADMIN*
+`最trusted的用户` | GET | /api/customers/trusted | Customer.trustedUsers() | *ADMIN*
 `添加图书` | POST | /api/books | Book.add() | *ADMIN*
 `添加作者` | POST | /api/authors | Author.add() | *ADMIN*
 `添加出版社` | POST | /api/publisher | Publisher.add() | *ADMIN*

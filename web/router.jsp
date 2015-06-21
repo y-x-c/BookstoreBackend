@@ -170,6 +170,20 @@
             out.println(result);
         }
 
+        // /orders/orders
+    } else if (dirs.length == 2 && dirs[0].equals("orders") && dirs[1].equals("orders") && verb.equals("GET")) {
+        System.err.println("Forwarding to Order.orders()");
+        String start = request.getParameter("start");
+        String end = request.getParameter("end");
+        String span = request.getParameter("span");
+
+        String result = Order.orders(start, end, span);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+
         // /orders/:orderid
     } else if (dirs.length == 2 && dirs[0].equals("orders") && verb.equals("GET")) {
         System.err.println("Forwarding to Orders.details()");

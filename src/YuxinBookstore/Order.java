@@ -86,6 +86,35 @@ public class Order {
         return result.build().toString();
     }
 
+    public static String orders(String start, String end, String span) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonObjectBuilder orders = Json.createObjectBuilder();
+        String st = start.split("T")[0];
+        String ed = end.split("T")[0];
+
+        try {
+            String sql = "SELECT COUNT(*) AS orders, DATE_FORMAT(O.time, '%Y-%m-%d') AS day FROM Orders O " +
+                    " WHERE " + "O.time >= '" + st + "' AND O.time <= '" + ed + "'" +
+                    " GROUP BY day ORDER BY day ASC";
+
+//            System.out.println(sql);
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                orders.add(rs.getString("day"), rs.getInt("orders"));
+            }
+
+        } catch (Exception e) {
+            System.out.println("Failed to get amount of orders");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
+        return result.add("orders", orders).build().toString();
+    }
+
+    /////////////////////////////////////////////////////
     public static ArrayList<String> add2CartDescs() {
         ArrayList<String> descs = new ArrayList<String>();
         descs.add("Add it into the cart");
