@@ -6,11 +6,36 @@ package YuxinBookstore;
 
 import javax.json.*;
 import javax.json.JsonObjectBuilder;
+import javax.xml.transform.Result;
 import java.io.*;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
 public class Feedback {
+    private static JsonObjectBuilder JSONFeedbacks(ResultSet rs, JsonObjectBuilder feedback) throws Exception{
+        feedback.add("id", rs.getString("F.fid"));
+        feedback.add("isbn", rs.getString("F.isbn"));
+        feedback.add("customer", rs.getInt("F.cid"));
+        feedback.add("score", rs.getInt("F.score"));
+        String comment = rs.getString("F.comment");
+        feedback.add("comment", comment == null ? "" : comment);
+        feedback.add("time", rs.getString("F.time"));
+        feedback.add("usefulness", rs.getDouble("usefulness"));
+
+        return feedback;
+    }
+
+    private static JsonObjectBuilder JSONFeedbacks(String isbn, String cid, JsonObjectBuilder feedback) throws Exception {
+        String sql = "SELECT F.fid, F.isbn, F.cid, F.score, F.comment, F.time, " +
+                "(SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness " +
+                "FROM Feedback F WHERE isbn = '" + isbn + "' AND cid = " + cid;
+
+        ResultSet rs = null;
+        Connector con = new Connector();
+        rs = con.stmt.executeQuery(sql);
+        return JSONFeedbacks(rs, feedback);
+    }
+
     public static String details(final int fid) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         Connector con = null;
@@ -26,7 +51,7 @@ public class Feedback {
         }
 
         // get details
-        String sql = "SELECT F.isbn, F.cid, F.score, F.comment, F.time, " +
+        String sql = "SELECT F.fid, F.isbn, F.cid, F.score, F.comment, F.time, " +
                 "(SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness " +
                 "FROM Feedback F WHERE fid = " + fid;
 
@@ -36,14 +61,7 @@ public class Feedback {
 
             rs.next();
             JsonObjectBuilder feedback = Json.createObjectBuilder();
-            feedback.add("id", fid);
-            feedback.add("isbn", rs.getString("F.isbn"));
-            feedback.add("customer", rs.getInt("F.cid"));
-            feedback.add("score", rs.getInt("F.score"));
-            String comment = rs.getString("F.comment");
-            feedback.add("comment", comment == null ? "" : comment);
-            feedback.add("time", rs.getString("F.time"));
-            feedback.add("usefulness", rs.getDouble("usefulness"));
+            feedback = JSONFeedbacks(rs, feedback);
             result.add("feedback", feedback);
         } catch(Exception e) {
             System.out.println("Failed to added details into result");
@@ -55,6 +73,42 @@ public class Feedback {
         return result.build().toString();
     }
 
+    public static String add(JsonObject payload) {
+        try {
+            JsonObjectBuilder result = Json.createObjectBuilder();
+            JsonObject feedback = payload.getJsonObject("feedback");
+            Integer _score = feedback.getInt("score");
+            String score = _score.toString();
+            String cid = feedback.getString("customer");
+            String comment = feedback.getString("comment");
+            String isbn = feedback.getString("book");
+
+            String sql = "INSERT INTO Feedback (isbn, cid, score, comment, time) VALUES (";
+            sql += Utility.genStringAttr(isbn, ",");
+            sql += Utility.genStringAttr(cid, ",");
+            sql += Utility.genStringAttr(score, ",");
+            sql += Utility.genStringAttr(comment, ",");
+            sql += "NOW()" + ")";
+
+            System.out.println(sql);
+
+            Connector con = new Connector();
+            con.stmt.execute(sql);
+
+            JsonObjectBuilder newFeedback = Json.createObjectBuilder();
+            newFeedback = JSONFeedbacks(isbn, cid, newFeedback);
+            result.add("feedback", newFeedback);
+
+            return result.build().toString();
+        } catch(Exception e) {
+            System.out.println("Failed to record the feedback");
+            System.err.println(e.getMessage());
+            return null;
+        }
+    }
+
+
+    ////////////////////////////////////////////
     public static ArrayList<String> recordDescs() {
         ArrayList<String> descs = new ArrayList<String>();
         descs.add("Record your feedback for a book");

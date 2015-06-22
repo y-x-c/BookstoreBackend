@@ -41,6 +41,8 @@ public class Book {
         book.add("subject", subject == null ? "" : subject);
         String summary = rs.getString("summary");
         book.add("summary", summary == null ? "" : summary);
+        String img = rs.getString("img");
+        book.add("img", img == null ? "" : img);
         int pid = rs.getInt("pid");
         book.add("publisher", pid);
 

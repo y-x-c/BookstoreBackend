@@ -21,10 +21,11 @@
     String[] dirs = URI.substring(baseURI.length(), URI.length()).split("/");
     System.err.println(verb + " " + URI);
 
-    int sessionCid = (Integer)session.getAttribute("cid") == null ? -1 : (Integer)session.getAttribute("cid");
-    Boolean isAdmin = (Boolean)session.getAttribute("isAdmin") == null ? false : (Boolean)session.getAttribute("isAdmin");
+    int sessionCid = session.getAttribute("cid") == null ? -1 : (Integer)session.getAttribute("cid");
+    Boolean isAdmin = session.getAttribute("isAdmin") == null ? false : (Boolean)session.getAttribute("isAdmin");
 
-        // /customers/login
+    System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid"));
+    // /customers/login
     if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("login") && verb.equals("POST")) {
         System.err.println("Forwarding to Customer.login()");
         InputStream body = request.getInputStream();
@@ -37,6 +38,7 @@
         if(cid > 0) {
             out.println(result.build().toString());
             session.setAttribute("cid", cid);
+            System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid"));
         } else {
             response.sendError(response.SC_NOT_FOUND);
             session.invalidate();
@@ -163,6 +165,20 @@
         String result = Feedback.details(fid);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND, "Feedback not found");
+        } else {
+            out.println(result);
+        }
+
+        // /feedbacks
+    } else if (dirs.length == 1 && dirs[0].equals("feedbacks") && verb.equals("POST")) {
+        System.err.println("Forwarding to Feedback.add()");
+        InputStream body = request.getInputStream();
+        JsonReader jsonReader = Json.createReader(body);
+        JsonObject payload = jsonReader.readObject();
+
+        String result = Feedback.add(payload);
+        if(result == null) {
+            response.sendError(response.SC_NOT_FOUND);
         } else {
             out.println(result);
         }
