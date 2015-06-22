@@ -244,15 +244,70 @@
         // /orders/:orderid
     } else if (dirs.length == 2 && dirs[0].equals("orders") && verb.equals("GET")) {
         System.err.println("Forwarding to Orders.details()");
-        int cid = Integer.parseInt(dirs[1]);
+        int orderid = Integer.parseInt(dirs[1]);
 
-        String result = Order.details(cid);
+        String result = Order.details(orderid);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND, "Order not found");
         } else {
             out.println(result);
         }
 
+    } else if (dirs.length == 1 && dirs[0].equals("carts") && verb.equals("GET")) {
+        System.err.println("Forwarding to Order.cart()");
+//        String _limit = request.getParameter("limit");
+//        String _offset = request.getParameter("offset");
+//        int limit, offset;
+//        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+//        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+        String _cid = request.getParameter("customer");
+        int cid = Integer.parseInt(_cid);
+        //////////////////// TBD
+        // use SESSION ID
+
+        String result = Order.cart(cid);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+
+    } else if (dirs.length == 2 && dirs[0].equals("carts") && verb.equals("GET")) {
+        System.err.println("Forwarding to Order.cartDetails()");
+//        String _limit = request.getParameter("limit");
+//        String _offset = request.getParameter("offset");
+//        int limit, offset;
+//        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+//        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+        String[] customerBook = dirs[1].split("-");
+        int cid = Integer.parseInt(customerBook[0]);
+        String isbn = customerBook[1];
+
+        //////////////////// TBD
+        // use SESSION ID
+
+        String result = Order.cartDetails(cid, isbn);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+
+        // POST /carts
+    } else if (dirs.length == 1 && dirs[0].equals("carts") && verb.equals("POST")) {
+        System.err.println("Forwarding to Order.add2cart()");
+        InputStream body = request.getInputStream();
+        JsonReader jsonReader = Json.createReader(body);
+        JsonObject payload = jsonReader.readObject();
+
+        String result = Order.add2Cart(sessionCid, payload);
+        if (result == null) {
+            response.sendError(response.SC_BAD_REQUEST);
+        } else {
+            out.println(result);
+        }
+
+        // POST /publishers
     } else if (dirs.length == 1 && dirs[0].equals("publishers") && verb.equals("POST")) {
         System.err.println("Forwarding to Publisher.add()");
         InputStream body = request.getInputStream();
@@ -314,6 +369,7 @@
         } else {
             out.println(result);
         }
+        
     } else if (dirs.length == 1 && dirs[0].equals("books") && verb.equals("GET")) {
         System.err.println("Forwarding to Books.simpleSearch()");
         String orderBy = request.getParameter("orderBy");
@@ -328,6 +384,8 @@
         } else {
             out.println(result);
         }
+
+        // PUT /books/:isbn
     } else if (dirs.length == 2 && dirs[0].equals("books") && verb.equals("PUT")) {
         System.err.println("Forwarding to Book.add()");
         InputStream body = request.getInputStream();
@@ -335,6 +393,20 @@
         JsonObject payload = jsonReader.readObject();
 
         String result = Book.add(payload);
+        if (result == null) {
+            response.sendError(response.SC_BAD_REQUEST);
+        } else {
+            out.println(result);
+        }
+
+        // PUT /carts/:cart_id
+    } else if (dirs.length == 2 && dirs[0].equals("carts") && verb.equals("PUT")) {
+        System.err.println("Forwarding to Order.add2Cart()");
+        InputStream body = request.getInputStream();
+        JsonReader jsonReader = Json.createReader(body);
+        JsonObject payload = jsonReader.readObject();
+
+        String result = Order.add2Cart(sessionCid, payload);
         if (result == null) {
             response.sendError(response.SC_BAD_REQUEST);
         } else {

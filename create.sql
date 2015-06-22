@@ -100,21 +100,21 @@ INSERT INTO Customer (username, password, name) VALUES ("huangweijun", SHA1("hua
 --     PRIMARY KEY (kid)
 -- ) CHARACTER SET utf8;
 
-CREATE TABLE Address(
-    addrid INT NOT NULL AUTO_INCREMENT,
-    cid INT NOT NULL,
-    zip INT,
-    room VARCHAR(50),
-    street VARCHAR(50),
-    district VARCHAR(50),
-    city VARCHAR(50),
-    state VARCHAR(50),
-    country VARCHAR(50),
-    rphone VARCHAR(50),
-    rname VARCHAR(50),
-    PRIMARY KEY (addrid, cid),
-    FOREIGN KEY (cid) REFERENCES Customer(cid)
-) CHARACTER SET utf8;
+-- CREATE TABLE Address(
+--     addrid INT NOT NULL AUTO_INCREMENT,
+--     cid INT NOT NULL,
+--     zip INT,
+--     room VARCHAR(50),
+--     street VARCHAR(50),
+--     district VARCHAR(50),
+--     city VARCHAR(50),
+--     state VARCHAR(50),
+--     country VARCHAR(50),
+--     rphone VARCHAR(50),
+--     rname VARCHAR(50),
+--     PRIMARY KEY (addrid, cid),
+--     FOREIGN KEY (cid) REFERENCES Customer(cid)
+-- ) CHARACTER SET utf8;
 
 #1
 -- INSERT INTO Address (cid, zip, room, street, district, city, state, country) VALUES (2, 361009, "9X", "吕岭路X号", "思明区", "厦门", "福建省", "中国");

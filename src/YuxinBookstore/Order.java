@@ -2,6 +2,7 @@ package YuxinBookstore;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.xml.transform.Result;
 import java.awt.*;
@@ -112,6 +113,106 @@ public class Order {
         }
 
         return result.add("orders", orders).build().toString();
+    }
+
+    public static String add2Cart(final int sessionCid, JsonObject payload) {
+        try {
+            JsonObject cart = payload.getJsonObject("cart");
+            String isbn = cart.getString("book");
+            String cid = cart.getString("customer");
+            ////////////////// TBD
+            // assert sessionCid == cid
+            int amount = cart.getInt("amount");
+            JsonObjectBuilder result = Json.createObjectBuilder();
+
+            String sql = "INSERT INTO Cart (cid, isbn, amount) VALUES (" + cid + ",'" + isbn + "'," + amount + ") " +
+                    "ON DUPLICATE KEY UPDATE amount = VALUES(amount)";
+//            System.err.println(sql);
+
+            Connector con = new Connector();
+            con.stmt.execute(sql);
+
+            sql = "SELECT * FROM Cart WHERE isbn = '" + isbn + "' AND cid = " + cid;
+            ResultSet rs = con.stmt.executeQuery(sql);
+            rs.next();
+
+            int newAmount = rs.getInt("amount");
+
+            JsonObjectBuilder newCart = Json.createObjectBuilder();
+            newCart.add("amount", newAmount);
+            newCart.add("book", isbn);
+            newCart.add("id", cid + "-" + isbn);
+            newCart.add("customer", cid);
+            result.add("cart", newCart);
+            return result.build().toString();
+        } catch(Exception e) {
+            System.out.println("Failed to add into shopping cart");
+            System.err.println(e.getMessage());
+            return null;
+        }
+    }
+
+    public static String cart(final int cid) {
+        try {
+            String sql = "SELECT * FROM Cart C WHERE C.cid = " + cid;
+            //System.err.println(sql);
+            Connector con = new Connector();
+
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            JsonObjectBuilder result = Json.createObjectBuilder();
+            JsonArrayBuilder carts = Json.createArrayBuilder();
+
+            while(rs.next()) {
+                final int amount = rs.getInt("C.amount");
+                String isbn = rs.getString("isbn");
+
+                JsonObjectBuilder cart = Json.createObjectBuilder();
+                cart.add("book", isbn);
+                cart.add("amount", amount);
+                cart.add("customer", cid);
+                cart.add("id", cid + "-" + isbn);
+
+                carts.add(cart);
+            }
+            return result.add("carts", carts).build().toString();
+
+        } catch (Exception e) {
+            System.out.println("Failed to query");
+            System.err.println(e.getMessage());
+            return null;
+        }
+    }
+
+    public static String cartDetails(final int cid, String isbn) {
+        try {
+            String sql = "SELECT * FROM Cart C WHERE C.cid = " + cid + " AND C.isbn = '" + isbn + "'";
+            //System.err.println(sql);
+            Connector con = new Connector();
+
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            JsonObjectBuilder result = Json.createObjectBuilder();
+            JsonArrayBuilder carts = Json.createArrayBuilder();
+
+            JsonObjectBuilder cart = Json.createObjectBuilder();
+
+            cart.add("customer", cid);
+            cart.add("book", isbn);
+            cart.add("id", cid + "-" + isbn);
+            if(rs.next()) {
+                final int amount = rs.getInt("C.amount");
+                cart.add("amount", amount);
+            } else {
+                cart.add("amount", 0);
+            }
+
+            return result.add("cart", cart).build().toString();
+        } catch (Exception e) {
+            System.out.println("Failed to query");
+            System.err.println(e.getMessage());
+            return null;
+        }
     }
 
     /////////////////////////////////////////////////////
