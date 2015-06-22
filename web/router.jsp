@@ -369,7 +369,7 @@
         } else {
             out.println(result);
         }
-        
+
     } else if (dirs.length == 1 && dirs[0].equals("books") && verb.equals("GET")) {
         System.err.println("Forwarding to Books.simpleSearch()");
         String orderBy = request.getParameter("orderBy");

@@ -3,7 +3,7 @@ Description | HTTP method | URL | JAVA implementation | Note
 `获取热门图书` | GET | /api/books/popular?limit=&offset=&start=&end= | Book.popular() | *ADMIN*: 返回sales
 `获取图书详细信息` | GET | /api/books/:isbn | Book.details()
 搜索图书 | GET | /api/books/search | Book.simpleSearch(), Book.advancedSearch()
-`搜索图书 SimpleSearch` | GET | /api/books?all=&orderBy= | Book.simpleSearch(), all里的关键词由空格隔开，关键词可被ISBN, title, subtitle, authname, summary, pubname, keyword, subject之一匹配，关键词之间的关系是AND。orderBy总共有6种选择，奇数代表升序，偶数是降序，0/1出版年份排序，2/3平均评分排序，4/5（当用户登陆之后可用）被当前用户所信任的用户的平均评分，默认为1 | *PARTIALLY LOGINED*
+`搜索图书 SimpleSearch` | GET | /api/books?all=&orderBy= | Book.simpleSearch(), all里的关键词由空格隔开，关键词可被ISBN, title, subtitle, authname, summary, pubname, keyword, subject之一匹配，关键词之间的关系是AND。orderBy总共有6种选择，奇数代表降序，偶数是升序，0/1出版年份排序，2/3平均评分排序，4/5（当用户登陆之后可用）被当前用户所信任的用户的平均评分，默认为1 | *PARTIALLY LOGINED*
 获取购买建议 | GET | /api/books/:isbn/suggestions | Book.suggest() | *LOGINED*
 获取图书的评价 | GET | /api/books/:isbn/feedbacks | Feedback.showFeedbacks()
 `获取作者详细信息` | GET | /api/authors/:auth_id | Author.deatils()
