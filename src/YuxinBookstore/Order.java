@@ -45,7 +45,7 @@ public class Order {
             order.add("id", orderid);
             order.add("time", rs.getString("time"));
             order.add("customer", rs.getInt("cid"));
-            order.add("address", rs.getInt("addrid"));
+            order.add("address", rs.getString("addr"));
         } catch(Exception e) {
             System.out.println("Failed to added details");
             System.err.println(e.getMessage());

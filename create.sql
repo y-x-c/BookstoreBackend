@@ -117,23 +117,23 @@ CREATE TABLE Address(
 ) CHARACTER SET utf8;
 
 #1
-INSERT INTO Address (cid, zip, room, street, district, city, state, country) VALUES (2, 361009, "9X", "吕岭路X号", "思明区", "厦门", "福建省", "中国");
+-- INSERT INTO Address (cid, zip, room, street, district, city, state, country) VALUES (2, 361009, "9X", "吕岭路X号", "思明区", "厦门", "福建省", "中国");
 #2
-INSERT INTO Address (cid, zip, room, street, district, city, state, country) VALUES (1, 201203, "8X", "蔡伦路X号", "浦东新区", "上海", "上海", "中国");
+-- INSERT INTO Address (cid, zip, room, street, district, city, state, country) VALUES (1, 201203, "8X", "蔡伦路X号", "浦东新区", "上海", "上海", "中国");
 
 CREATE TABLE Orders(
     orderid INT NOT NULL AUTO_INCREMENT,
     time DATETIME NOT NULL,
     cid INT NOT NULL,
-    addrid INT NOT NULL,
-    PRIMARY KEY (orderid),
-    FOREIGN KEY (addrid, cid) REFERENCES Address(addrid, cid)
+    addr VARCHAR(300) NOT NULL,
+    PRIMARY KEY (orderid)
+    -- FOREIGN KEY (addrid, cid) REFERENCES Address(addrid, cid)
 ) CHARACTER SET utf8;
 
 #1
-INSERT INTO Orders (time, cid, addrid) VALUES (now(), 2, 1);
+INSERT INTO Orders (time, cid, addr) VALUES (now(), 2, "上海");
 #2
-INSERT INTO Orders (time, cid, addrid) VALUES (now(), 2, 1);
+INSERT INTO Orders (time, cid, addr) VALUES (now(), 2, "福建");
 
 CREATE TABLE ItemInOrder(
     id INT NOT NULL AUTO_INCREMENT,
