@@ -183,7 +183,7 @@ public class Book {
         return result.build().toString();
     }
 
-    public static String simpleSearch(int cid, int limit, String all, String _orderBy) {
+    public static String simpleSearch(int cid, int limit, int offset, String all, String _orderBy) {
         int orderBy = _orderBy == null ? 1 : Integer.parseInt(_orderBy);
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonArrayBuilder books = Json.createArrayBuilder();
@@ -226,7 +226,7 @@ public class Book {
                         "SELECT T.cid2 FROM TrustRecords T WHERE T.trust = TRUE AND T.cid1 = " + cid + ")))DESC";
             }
 
-            sql += " LIMIT " + limit;
+            sql += " LIMIT " + limit + " OFFSET " + offset;
 
             ResultSet rs = con.stmt.executeQuery(sql);
             while(rs.next()) {
@@ -245,6 +245,81 @@ public class Book {
 
         result.add("books", books);
         return result.build().toString();
+    }
+
+
+    public static String advancedSearch(int cid, int limit, int offset, JsonArray advanced, String _orderBy) {
+        try {
+            int orderBy = _orderBy == null ? 1 : Integer.parseInt(_orderBy);
+            JsonObjectBuilder result = Json.createObjectBuilder();
+            JsonArrayBuilder books = Json.createArrayBuilder();
+            String conditions = "";
+
+            for(int i = 0; i < advanced.size(); i++) {
+                JsonObject condition = advanced.getJsonObject(i);
+                String term = condition.getString("term");
+                String included = Utility.sanitize(condition.getString("cond"));
+                String conj = condition.getString("conj");
+
+                if(term.equals("Title"))
+                    conditions += " title LIKE '%" + included + "%'";
+                else if(term.equals("Author"))
+                    conditions += " authname LIKE '%" + included + "%'";
+                else if(term.equals("Publisher"))
+                    conditions += " pubname LIKE '%" + included + "%'";
+                else if(term.equals("Subject"))
+                    conditions += " subject LIKE '%" + included + "%'";
+                else return null;
+
+                if(i != advanced.size() - 1 ) {
+                    if (conj.equals("OR"))
+                        conditions += " OR ";
+                    else
+                        conditions += " AND ";
+                }
+            }
+
+            String sql = "SELECT * FROM Book B, Publisher P, WrittenBy W, Author A WHERE ";
+            sql += " B.pid = P.pid AND W.isbn = B.isbn AND A.authid = W.authid AND ";
+            sql += conditions;
+            sql += " GROUP BY B.isbn ";
+            if(orderBy == 0) {
+                sql += " ORDER BY pubdate ASC";
+            } else if(orderBy == 1) {
+                sql += " ORDER BY pubdate DESC";
+            } else if(orderBy == 2) {
+                sql += " ORDER BY (SELECT AVG(score) FROM Feedback F WHERE F.isbn = B.isbn)ASC";
+            } else if(orderBy == 3) {
+                sql += " ORDER BY (SELECT AVG(score) FROM Feedback F WHERE F.isbn = B.isbn)DESC";
+            } else if(orderBy == 4) {
+                sql += " ORDER BY (SELECT AVG(score) FROM Feedback F WHERE F.isbn = B.isbn AND " +
+                        "(F.cid = " + cid + " OR F.cid IN ( " +
+                        "SELECT T.cid2 FROM TrustRecords T WHERE T.trust = TRUE AND T.cid1 = " + cid + ")))ASC";
+            } else if(orderBy == 5) {
+                sql += " ORDER BY (SELECT AVG(score) FROM Feedback F WHERE F.isbn = B.isbn AND " +
+                        "(F.cid = " + cid + " OR F.cid IN ( " +
+                        "SELECT T.cid2 FROM TrustRecords T WHERE T.trust = TRUE AND T.cid1 = " + cid + ")))DESC";
+            }
+
+            sql += " LIMIT " + limit + " OFFSET " + offset;
+
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+            while(rs.next()) {
+                JsonObjectBuilder book = Json.createObjectBuilder();
+
+                book = JSONBook(rs, book);
+
+                books.add(book);
+            }
+
+            result.add("books", books);
+            return result.build().toString();
+        } catch(Exception e) {
+            System.out.println("Failed to build conditions");
+            System.err.println(e.getMessage());
+            return null;
+        }
     }
 
     public static String popular(int limit, int offset, String start, String end) {

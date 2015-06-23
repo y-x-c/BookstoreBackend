@@ -9,10 +9,9 @@
 <%@ page isErrorPage="true" contentType="text/json; charset=UTF-8" language="java" %>
 <%@ page language="java" import="YuxinBookstore.*" %>
 <%@ page import="java.io.InputStream" %>
-<%@ page import="javax.json.JsonReader" %>
-<%@ page import="javax.json.Json" %>
-<%@ page import="javax.json.JsonObject" %>
-<%@ page import="javax.json.JsonObjectBuilder" %>
+<%@ page import="java.io.ByteArrayInputStream" %>
+<%@ page import="javax.json.*" %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
 
 <%
     String verb = request.getMethod().toUpperCase();
@@ -370,15 +369,28 @@
             out.println(result);
         }
 
+        // GET /books?all=  /books?advanced=
     } else if (dirs.length == 1 && dirs[0].equals("books") && verb.equals("GET")) {
         System.err.println("Forwarding to Books.simpleSearch()");
         String orderBy = request.getParameter("orderBy");
         String all = request.getParameter("all");
+        String advanced = request.getParameter("advanced");
         String _limit = request.getParameter("limit");
-        int limit = 5;
-        if (_limit != null) limit = Integer.parseInt(_limit);
+        String _offset = request.getParameter("offset");
+        int limit, offset;
+        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
 
-        String result = Book.simpleSearch(sessionCid, limit, all, orderBy);
+        String result = null;
+        if(all != null && all.length() > 0) {
+            result = Book.simpleSearch(sessionCid, limit, offset, all, orderBy);
+        } else {
+            InputStream stream = new ByteArrayInputStream(advanced.getBytes(StandardCharsets.UTF_8));
+            JsonReader jsonReader = Json.createReader(stream);
+            JsonArray conditions = jsonReader.readArray();
+            result = Book.advancedSearch(sessionCid, limit, offset, conditions, orderBy);
+        }
+
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
