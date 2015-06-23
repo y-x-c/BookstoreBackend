@@ -141,17 +141,19 @@ public class Book {
             String format = book.isNull("format") ? null : book.getString("format");
             String summary = book.isNull("summary") ? null : book.getString("summary");
             String subject = book.isNull("subject") ? null : book.getString("subject");
-            String keyword = book.isNull("keyword") ? null : book.getString("keyword");;
-            String subtitle = book.isNull("subtitle") ? null : book.getString("subtitle");;
+            String keyword = book.isNull("keyword") ? null : book.getString("keyword");
+            String subtitle = book.isNull("subtitle") ? null : book.getString("subtitle");
+            String img = book.isNull("img") ? null : book.getString("img");
 
             String sql = "INSERT INTO Book (isbn, title, pid, copies, price, pubdate, " +
-                    "format, summary, subject, keyword, subtitle) VALUES ";
+                    "format, summary, subject, keyword, subtitle, img) VALUES ";
             sql += "('" + isbn + "','" + title + "'," + pid + "," + copies + "," + price + ",'" + pubdate + "',";
             sql += Utility.genStringAttr(format, ",");
             sql += Utility.genStringAttr(summary, ",");
             sql += Utility.genStringAttr(subject, ",");
             sql += Utility.genStringAttr(keyword, ",");
-            sql += Utility.genStringAttr(subtitle, "");
+            sql += Utility.genStringAttr(subtitle, ",");
+            sql += Utility.genStringAttr(img, "");
             sql += ") ON DUPLICATE KEY UPDATE copies=VALUES(copies)";
 
 //            System.err.println(sql);
