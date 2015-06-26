@@ -12,7 +12,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 
 public class Feedback {
-    private static JsonObjectBuilder JSONFeedbacks(ResultSet rs, JsonObjectBuilder feedback) throws Exception{
+    private static JsonObjectBuilder JSONFeedback(ResultSet rs, JsonObjectBuilder feedback) throws Exception{
         feedback.add("id", rs.getString("F.fid"));
         feedback.add("isbn", rs.getString("F.isbn"));
         feedback.add("customer", rs.getInt("F.cid"));
@@ -21,27 +21,46 @@ public class Feedback {
         feedback.add("comment", comment == null ? "" : comment);
         feedback.add("time", rs.getString("F.time"));
         feedback.add("usefulness", rs.getDouble("usefulness"));
+        String opinion = rs.getString("opinion");
+        if(opinion == null) {
+            feedback.add("opinion", JsonValue.NULL);
+        } else {
+            feedback.add("opinion", Integer.parseInt(opinion));
+        }
 
         return feedback;
     }
 
-    private static JsonObjectBuilder JSONFeedbacks(String isbn, String cid, JsonObjectBuilder feedback) throws Exception {
+    private static JsonObjectBuilder JSONFeedback(String isbn, String cid, JsonObjectBuilder feedback) throws Exception {
         String sql = "SELECT F.fid, F.isbn, F.cid, F.score, F.comment, F.time, " +
-                "(SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness " +
+                "(SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness, " +
+                "(SELECT U.rating FROM Usefulness U WHERE U.fid = F.fid AND U.cid = " + cid + ") AS opinion " +
                 "FROM Feedback F WHERE isbn = '" + isbn + "' AND cid = " + cid;
 
         ResultSet rs = null;
         Connector con = new Connector();
         rs = con.stmt.executeQuery(sql);
-        return JSONFeedbacks(rs, feedback);
+        rs.next();
+        return JSONFeedback(rs, feedback);
     }
 
-    public static String details(final int fid) {
+    private static JsonObjectBuilder JSONFeedback(int cid, int fid, JsonObjectBuilder feedback) throws Exception {
+        String sql = "SELECT F.fid, F.isbn, F.cid, F.score, F.comment, F.time, " +
+                "(SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness, " +
+                "(SELECT U.rating FROM Usefulness U WHERE U.fid = F.fid AND U.cid = " + cid + ") AS opinion " +
+                "FROM Feedback F WHERE fid = " + fid;
+
+        ResultSet rs = null;
+        Connector con = new Connector();
+        rs = con.stmt.executeQuery(sql);
+        rs.next();
+        return JSONFeedback(rs, feedback);
+    }
+
+    public static String details(final int cid, final int fid) {
         JsonObjectBuilder result = Json.createObjectBuilder();
-        Connector con = null;
 
         try {
-            con = new Connector();
             System.err.println("Connected to the database.");
         } catch (Exception e) {
             System.err.println("Cannot connect to the database.");
@@ -51,17 +70,9 @@ public class Feedback {
         }
 
         // get details
-        String sql = "SELECT F.fid, F.isbn, F.cid, F.score, F.comment, F.time, " +
-                "(SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness " +
-                "FROM Feedback F WHERE fid = " + fid;
-
-        ResultSet rs = null;
         try {
-            rs = con.stmt.executeQuery(sql);
-
-            rs.next();
             JsonObjectBuilder feedback = Json.createObjectBuilder();
-            feedback = JSONFeedbacks(rs, feedback);
+            feedback = JSONFeedback(cid, fid, feedback);
             result.add("feedback", feedback);
         } catch(Exception e) {
             System.out.println("Failed to added details into result");
@@ -96,12 +107,36 @@ public class Feedback {
             con.stmt.execute(sql);
 
             JsonObjectBuilder newFeedback = Json.createObjectBuilder();
-            newFeedback = JSONFeedbacks(isbn, cid, newFeedback);
+            newFeedback = JSONFeedback(isbn, cid, newFeedback);
             result.add("feedback", newFeedback);
 
             return result.build().toString();
         } catch(Exception e) {
             System.out.println("Failed to record the feedback");
+            System.err.println(e.getMessage());
+            return null;
+        }
+    }
+
+    public static String assess(int cid, final int fid, JsonObject payload) {
+        JsonObject feedback = payload.getJsonObject("feedback");
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        int rating = feedback.getInt("opinion");
+
+        try {
+            String sql = "INSERT INTO Usefulness (fid, cid, rating) VALUES (";
+            sql += fid + "," + cid + "," + rating + ")";
+            Connector con = new Connector();
+
+            con.stmt.execute(sql);
+
+            JsonObjectBuilder newFeedback = Json.createObjectBuilder();
+            newFeedback = JSONFeedback(cid, fid, newFeedback);
+            result.add("feedback", newFeedback);
+
+            return result.build().toString();
+        } catch (Exception e) {
+            System.out.println("Failed to insert");
             System.err.println(e.getMessage());
             return null;
         }

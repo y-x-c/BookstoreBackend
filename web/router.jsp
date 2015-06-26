@@ -156,14 +156,33 @@
             out.println(result);
         }
 
-        // /feedbacks/:fid
+        // GET /feedbacks/:fid
     } else if (dirs.length == 2 && dirs[0].equals("feedbacks") && verb.equals("GET")) {
         System.err.println("Forwarding to Feedback.details()");
         int fid = Integer.parseInt(dirs[1]);
+        ///////////////TBD
+        int cid = 2;
 
-        String result = Feedback.details(fid);
+        String result = Feedback.details(cid, fid);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND, "Feedback not found");
+        } else {
+            out.println(result);
+        }
+
+    } else if (dirs.length == 2 && dirs[0].equals("feedbacks") && verb.equals("PUT")) {
+        System.err.println("Forwarding to Feedback.assess()");
+        int fid = Integer.parseInt(dirs[1]);
+        ///////////////TBD
+        int cid = 2;
+
+        InputStream body = request.getInputStream();
+        JsonReader jsonReader = Json.createReader(body);
+        JsonObject payload = jsonReader.readObject();
+
+        String result = Feedback.assess(cid, fid, payload);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
         } else {
             out.println(result);
         }
