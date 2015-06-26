@@ -25,7 +25,8 @@
     Boolean isAdmin = session.getAttribute("isAdmin") == null ? false : (Boolean)session.getAttribute("isAdmin");
 
     System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid"));
-    // /customers/login
+
+        // /customers/login
     if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("login") && verb.equals("POST")) {
         System.err.println("Forwarding to Customer.login()");
         InputStream body = request.getInputStream();
@@ -421,7 +422,7 @@
 
         // GET /books?all=  /books?advanced=
     } else if (dirs.length == 1 && dirs[0].equals("books") && verb.equals("GET")) {
-        System.err.println("Forwarding to Books.simpleSearch()");
+
         String orderBy = request.getParameter("orderBy");
         String all = request.getParameter("all");
         String advanced = request.getParameter("advanced");
@@ -433,8 +434,10 @@
 
         String result = null;
         if(all != null && all.length() > 0) {
+            System.err.println("Forwarding to Books.simpleSearch()");
             result = Book.simpleSearch(sessionCid, limit, offset, all, orderBy);
         } else {
+            System.err.println("Forwarding to Books.advancedSearch()");
             InputStream stream = new ByteArrayInputStream(advanced.getBytes(StandardCharsets.UTF_8));
             JsonReader jsonReader = Json.createReader(stream);
             JsonArray conditions = jsonReader.readArray();
@@ -474,6 +477,8 @@
         } else {
             out.println(result);
         }
+
+        // GET /authors/degree
     } else if (dirs.length == 2 && dirs[0].equals("authors") && dirs[1].equals("degree") && verb.equals("GET")) {
         System.err.println("Forwarding to Author.degree()");
         String author1 = request.getParameter("author1");

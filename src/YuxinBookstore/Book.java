@@ -252,6 +252,7 @@ public class Book {
             }
 
             sql += " LIMIT " + limit + " OFFSET " + offset;
+//            System.out.println(sql);
 
             ResultSet rs = con.stmt.executeQuery(sql);
             while(rs.next()) {
@@ -262,14 +263,27 @@ public class Book {
                 books.add(book);
             }
 
+
+            sql = "SELECT COUNT(DISTINCT B.isbn) as total FROM Book B, Publisher P, WrittenBy W, Author A WHERE ";
+            sql += " B.pid = P.pid AND W.isbn = B.isbn AND A.authid = W.authid AND ";
+            sql += conditions;
+
+//            System.out.println(sql);
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+            int total = rs.getInt("total");
+
+            JsonObjectBuilder meta = Json.createObjectBuilder();
+            meta.add("total", total);
+            result.add("meta", meta);
+
+            result.add("books", books);
+            return result.build().toString();
         } catch(Exception e) {
             System.out.println("Simple search failed");
             System.err.println(e.getMessage());
             return null;
         }
-
-        result.add("books", books);
-        return result.build().toString();
     }
 
 
@@ -337,6 +351,18 @@ public class Book {
 
                 books.add(book);
             }
+
+            sql = "SELECT COUNT(DISTINCT B.isbn) as total FROM Book B, Publisher P, WrittenBy W, Author A WHERE ";
+            sql += " B.pid = P.pid AND W.isbn = B.isbn AND A.authid = W.authid AND ";
+            sql += conditions;
+
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+            int total = rs.getInt("total");
+
+            JsonObjectBuilder meta = Json.createObjectBuilder();
+            meta.add("total", total);
+            result.add("meta", meta);
 
             result.add("books", books);
             return result.build().toString();
