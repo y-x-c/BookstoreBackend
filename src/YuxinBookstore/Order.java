@@ -19,6 +19,45 @@ import java.util.ArrayList;
 
 public class Order {
 
+    private static JsonObjectBuilder JSONOrder(ResultSet rs, JsonObjectBuilder order) throws Exception{
+        int orderid = rs.getInt("orderid");
+        order.add("id", orderid);
+        order.add("time", rs.getString("time"));
+        order.add("customer", rs.getInt("cid"));
+        order.add("address", rs.getString("addr"));
+
+        return order;
+    }
+
+    private static JsonObjectBuilder JSONOrder(int orderid, JsonObjectBuilder order) throws Exception {
+        String sql = "SELECT * FROM Orders WHERE orderid = " + orderid;
+        Connector con = new Connector();
+        ResultSet rs = con.stmt.executeQuery(sql);
+        rs.next();
+        return JSONOrder(rs, order);
+    }
+
+    private static void JSONOrderItems(int orderid, JsonArrayBuilder items, JsonObjectBuilder order) throws Exception {
+        Connector con = new Connector();
+        String sql = "SELECT * FROM ItemInOrder WHERE orderid = " + orderid;
+        JsonArrayBuilder itemids = Json.createArrayBuilder();
+        ResultSet rs = con.stmt.executeQuery(sql);
+
+        while(rs.next()) {
+            itemids.add(rs.getInt("id"));
+
+            JsonObjectBuilder item = Json.createObjectBuilder();
+            item.add("id", rs.getInt("id"));
+            item.add("order", rs.getInt("orderid"));
+            item.add("book", rs.getString("isbn"));
+            item.add("amount", rs.getInt("amount"));
+            item.add("price", rs.getDouble("price"));
+            items.add(item);
+        }
+
+        order.add("orderItems", itemids);
+    }
+
     public static String details(final int orderid) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         Connector con = null;
@@ -43,10 +82,8 @@ public class Order {
         try {
             rs = con.stmt.executeQuery(sql);
             rs.next();
-            order.add("id", orderid);
-            order.add("time", rs.getString("time"));
-            order.add("customer", rs.getInt("cid"));
-            order.add("address", rs.getString("addr"));
+
+            order = JSONOrder(rs, order);
         } catch(Exception e) {
             System.out.println("Failed to added details");
             System.err.println(e.getMessage());
@@ -54,27 +91,10 @@ public class Order {
             return null;
         }
 
-        JsonArrayBuilder itemids = Json.createArrayBuilder();
         JsonArrayBuilder items = Json.createArrayBuilder();
         // get order-items
         try {
-            sql = "SELECT * FROM ItemInOrder WHERE orderid = " + orderid;
-
-            rs = con.stmt.executeQuery(sql);
-
-            while(rs.next()) {
-                itemids.add(rs.getInt("id"));
-
-                JsonObjectBuilder item = Json.createObjectBuilder();
-                item.add("id", rs.getInt("id"));
-                item.add("order", rs.getInt("orderid"));
-                item.add("book", rs.getString("isbn"));
-                item.add("amount", rs.getInt("amount"));
-                item.add("price", rs.getDouble("price"));
-                items.add(item);
-            }
-
-            order.add("orderItems", itemids);
+            JSONOrderItems(orderid, items, order);
         } catch (Exception e) {
             System.out.println("Failed to added order items");
             System.err.println(e.getMessage());
@@ -113,6 +133,81 @@ public class Order {
         }
 
         return result.add("orders", orders).build().toString();
+    }
+
+    public static String add(final int sessionCid, JsonObject payload) {
+
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonObjectBuilder newOrder = Json.createObjectBuilder();
+        JsonArrayBuilder newItems = Json.createArrayBuilder();
+        JsonObject order = payload.getJsonObject("order");
+        String addr = order.getString("address");
+
+        //////////////// TBD
+        final int cid = Integer.parseInt(order.getString("customer"));
+
+        Connector con = null;
+        try {
+            con = new Connector();
+        } catch (Exception e) {
+            return null;
+        }
+
+        try {
+            // check available amount
+            String sql = "SELECT B.isbn, B.title FROM Book B, Cart C WHERE C.cid = " + cid +
+                    " AND B.isbn = C.isbn AND B.copies < C.amount" ;
+
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            if(rs.next()) {
+                System.out.print("No enough books ");
+                System.out.println(rs.getString("title"));
+                return null;
+            }
+
+            // modify amount and record order
+            // without batch
+
+            sql = "UPDATE Book SET copies = copies - " +
+                    "(SELECT C.amount FROM Cart C WHERE Book.isbn = C.isbn AND C.cid = " + cid + ") " +
+                    "WHERE Book.isbn IN (SELECT C.isbn FROM Cart C WHERE C.cid = " + cid + ")";
+            System.err.println(sql);
+            con.stmt.execute(sql);
+
+            sql = "INSERT INTO Orders (time, cid, addr) VALUES (NOW(), " + cid + ", '" + addr + "')";
+            System.err.println(sql);
+            con.stmt.execute(sql);
+
+            sql = "SELECT LAST_INSERT_ID() AS orderid";
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+            int orderid = rs.getInt("orderid");
+
+            sql = "INSERT INTO ItemInOrder (orderid, isbn, price, amount) " +
+                    "SELECT LAST_INSERT_ID(), C.isbn, B.price, C.amount FROM Cart C, Book B WHERE " +
+                    "C.isbn = B.isbn AND C.cid = " + cid;
+            System.err.println(sql);
+            con.stmt.execute(sql);
+
+            sql = "DELETE FROM Cart WHERE cid = " + cid;
+            System.err.println(sql);
+            con.stmt.execute(sql);
+
+            newOrder = JSONOrder(orderid, newOrder);
+            JSONOrderItems(orderid, newItems, newOrder);
+
+            result.add("order", newOrder);
+            result.add("orderItems", newItems);
+
+            return result.build().toString();
+        } catch(Exception e) {
+            System.out.println("Failed to update");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+
     }
 
     public static String add2Cart(final int sessionCid, JsonObject payload) {

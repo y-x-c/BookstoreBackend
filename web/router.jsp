@@ -226,6 +226,21 @@
             out.println(result);
         }
 
+    } else if (dirs.length == 1 && dirs[0].equals("orders") && verb.equals("POST")) {
+        System.err.println("Forwarding to Orders.add()");
+        InputStream body = request.getInputStream();
+        JsonReader jsonReader = Json.createReader(body);
+        JsonObject payload = jsonReader.readObject();
+
+        // sessionCid
+        ///////////////////////////// TBD
+        String result = Order.add(sessionCid, payload);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+
         // /orders/orders
     } else if (dirs.length == 2 && dirs[0].equals("orders") && dirs[1].equals("orders") && verb.equals("GET")) {
         System.err.println("Forwarding to Order.orders()");
