@@ -14,48 +14,66 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class Customer {
-    private static JsonObjectBuilder JSONCustomer(ResultSet rs, JsonObjectBuilder customer) throws Exception{
-        final String cid = rs.getString("cid");
+    private static JsonObjectBuilder JSONCustomer(int authcid, ResultSet rs, JsonObjectBuilder customer) throws Exception{
+        Connector con = new Connector();
+        String sql;
+        ResultSet rs2;
+        int cid = rs.getInt("cid");
+        Boolean trusted = false, beTrusted = false;
+
+        sql = "SELECT trust FROM TrustRecords WHERE cid1 = " + cid + " AND cid2 = " + authcid;
+        rs2 = con.stmt.executeQuery(sql);
+        if(rs2.next()) {
+            beTrusted = rs2.getBoolean("trust");
+        }
 
         customer.add("id", cid);
         customer.add("username", rs.getString("username"));
-        customer.add("name", rs.getString("name"));
-        String email = rs.getString("email");
-        customer.add("email", email == null ? "" : email);
-        String phone = rs.getString("phone");
-        customer.add("phone", phone == null ? "" : phone);
 
+        if(authcid < 0 || authcid == cid || beTrusted) {
+            customer.add("name", rs.getString("name"));
+            String email = rs.getString("email");
+            customer.add("email", email == null ? "" : email);
+            String phone = rs.getString("phone");
+            customer.add("phone", phone == null ? "" : phone);
 
-        Connector con = new Connector();
-        String sql = "SELECT orderid FROM Orders WHERE cid = " + cid;
-        rs = con.stmt.executeQuery(sql);
+            sql = "SELECT orderid FROM Orders WHERE cid = " + cid;
+            rs2 = con.stmt.executeQuery(sql);
 
-        JsonArrayBuilder orders = Json.createArrayBuilder();
-        while(rs.next()) {
-            orders.add(rs.getInt("orderid"));
+            JsonArrayBuilder orders = Json.createArrayBuilder();
+            while (rs2.next()) {
+                orders.add(rs2.getInt("orderid"));
+            }
+
+            customer.add("orders", orders);
         }
 
-        customer.add("orders", orders);
+        sql = "SELECT trust FROM TrustRecords WHERE cid1 = " + authcid + " AND cid2 = " + cid;
+        rs2 = con.stmt.executeQuery(sql);
+        if(rs2.next()){
+            trusted = rs2.getBoolean("trust");
+            customer.add("trusted", trusted);
+        }
 
         return customer;
     }
 
-    private static JsonObjectBuilder JSONCustomer(int cid, JsonObjectBuilder customer) throws Exception{
+    private static JsonObjectBuilder JSONCustomer(int authcid, int cid, JsonObjectBuilder customer) throws Exception{
         Connector con = new Connector();
         String sql = "SELECT * from Customer where cid = '" + cid + "'";
         ResultSet rs = con.stmt.executeQuery(sql);
         rs.next();
-        return JSONCustomer(rs, customer);
+        return JSONCustomer(authcid, rs, customer);
     }
 
 
-    public static String details(final int cid) {
+    public static String details(int authcid, final int cid) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonObjectBuilder customer = Json.createObjectBuilder();
 
 
         try {
-            customer = JSONCustomer(cid, customer);
+            customer = JSONCustomer(authcid, cid, customer);
         } catch (Exception e) {
             System.out.println("Failed to query customers details");
             System.err.println(e.getMessage());
@@ -67,7 +85,7 @@ public class Customer {
     }
 
 
-    public static String trusted(int limit, int offset) {
+    public static String trusted(int authcid, int limit, int offset) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonArrayBuilder customers = Json.createArrayBuilder();
         JsonObjectBuilder scores = Json.createObjectBuilder();
@@ -85,7 +103,7 @@ public class Customer {
                 final int cid = rs.getInt("C.cid"), score = rs.getInt("score");
 
                 JsonObjectBuilder customer = Json.createObjectBuilder();
-                customer = JSONCustomer(cid, customer);
+                customer = JSONCustomer(authcid, cid, customer);
                 customers.add(customer);
 
                 String _cid = Integer.toString(cid);
@@ -101,7 +119,7 @@ public class Customer {
         return result.build().toString();
     }
 
-    public static String useful(int limit, int offset) {
+    public static String useful(int authcid, int limit, int offset) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonArrayBuilder customers = Json.createArrayBuilder();
         JsonObjectBuilder ratings = Json.createObjectBuilder();
@@ -117,7 +135,7 @@ public class Customer {
                 final int cid = rs.getInt("cid"), rating = rs.getInt("avgRating");
 
                 JsonObjectBuilder customer = Json.createObjectBuilder();
-                customer = JSONCustomer(cid, customer);
+                customer = JSONCustomer(authcid, cid, customer);
                 customers.add(customer);
 
                 String _cid = Integer.toString(cid);
@@ -131,6 +149,32 @@ public class Customer {
 
         result.add("customers", customers).add("ratings", ratings);
         return result.build().toString();
+    }
+
+    public static String trust(int authcid, int cid, JsonObject payload) {
+        JsonObject customer = payload.getJsonObject("customer");
+        Boolean trusted = customer.getBoolean("trusted");
+
+        try {
+            String sql = "INSERT INTO TrustRecords (cid1, cid2, trust) VALUES (";
+            sql += authcid + "," + cid + "," + trusted + ")";
+            sql += " ON DUPLICATE KEY UPDATE trust=VALUES(trust)";
+
+            Connector con = new Connector();
+
+            con.stmt.execute(sql);
+
+            JsonObjectBuilder newCustomer = Json.createObjectBuilder();
+            newCustomer = JSONCustomer(authcid, cid, newCustomer);
+            JsonObjectBuilder result = Json.createObjectBuilder();
+            result.add("customer", newCustomer);
+            return result.build().toString();
+
+        } catch (Exception e) {
+            System.out.println("Failed to insert");
+            System.err.println(e.getMessage());
+            return null;
+        }
     }
 
     public static int login(JsonObject payload, JsonObjectBuilder result) {
@@ -151,7 +195,7 @@ public class Customer {
 
             if(rs.next()) {
                 int cid = rs.getInt(1);
-                JSONCustomer(cid, customer);
+                JSONCustomer(cid, cid, customer);
                 result.add("customer", customer);
                 return cid;
             } else {
@@ -195,7 +239,7 @@ public class Customer {
             rs.next();
             int cid = rs.getInt(1);
 
-            customer = JSONCustomer(cid, customer);
+            customer = JSONCustomer(cid, cid, customer);
             result.add("customer", customer);
 
             return cid;

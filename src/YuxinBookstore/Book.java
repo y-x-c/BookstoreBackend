@@ -120,6 +120,29 @@ public class Book {
             return null;
         }
 
+        try {
+            sql = "SELECT I2.isbn, SUM(I2.amount) FROM ItemInOrder I1, ItemInOrder I2, Orders O1, Orders O2 WHERE " +
+                    "O1.cid = O2.cid AND O1.orderid = I1.orderid AND O2.orderid = I2.orderid AND " +
+                    "I1.isbn='" + isbn + "'" + " AND I2.isbn != '" + isbn + "'" +
+                    " GROUP BY I2.isbn" +
+                    " LIMIT 5 ";
+
+            //System.err.println(sql);
+
+            rs = con.stmt.executeQuery(sql);
+
+            JsonArrayBuilder suggestions = Json.createArrayBuilder();
+            while(rs.next()) {
+                suggestions.add(rs.getString("I2.isbn"));
+            }
+
+            book.add("suggestions", suggestions);
+        } catch(Exception e) {
+            System.out.println("Failed to query");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
         result.add("book", book);
 
         return result.build().toString();

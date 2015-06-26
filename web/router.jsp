@@ -21,6 +21,7 @@
     System.err.println(verb + " " + URI);
 
     int sessionCid = session.getAttribute("cid") == null ? -1 : (Integer)session.getAttribute("cid");
+    int authcid = 2;
     Boolean isAdmin = session.getAttribute("isAdmin") == null ? false : (Boolean)session.getAttribute("isAdmin");
 
     System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid"));
@@ -210,7 +211,7 @@
         if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
         if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
 
-        String result = Customer.useful(limit, offset);
+        String result = Customer.useful(authcid, limit, offset);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
@@ -225,7 +226,7 @@
         if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
         if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
 
-        String result = Customer.trusted(limit, offset);
+        String result = Customer.trusted(authcid, limit, offset);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
@@ -234,13 +235,28 @@
 
         // /customers/:cid
         // authentication required
+        //////////// TBD
     } else if (dirs.length == 2 && dirs[0].equals("customers") && verb.equals("GET")) {
         System.err.println("Forwarding to Customers.details()");
         int cid = Integer.parseInt(dirs[1]);
 
-        String result = Customer.details(cid);
+        String result = Customer.details(authcid, cid);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND, "Customer not found");
+        } else {
+            out.println(result);
+        }
+
+    } else if (dirs.length == 2 && dirs[0].equals("customers") && verb.equals("PUT")) {
+        System.err.println("Forwarding to Customers.trust()");
+        InputStream body = request.getInputStream();
+        JsonReader jsonReader = Json.createReader(body);
+        JsonObject payload = jsonReader.readObject();
+        int cid = Integer.parseInt(dirs[1]);
+
+        String result = Customer.trust(authcid, cid, payload);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
         } else {
             out.println(result);
         }
