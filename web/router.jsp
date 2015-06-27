@@ -21,12 +21,13 @@
     System.err.println(verb + " " + URI);
 
     int sessionCid = session.getAttribute("cid") == null ? -1 : (Integer)session.getAttribute("cid");
-    int authcid = 2;
-    Boolean isAdmin = session.getAttribute("isAdmin") == null ? false : (Boolean)session.getAttribute("isAdmin");
+    int authcid = sessionCid;
+    int isAdmin = session.getAttribute("isAdmin") == null ? 0 : (Integer)session.getAttribute("isAdmin");
 
-    System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid"));
+    System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid") + " " + session.getAttribute("isAdmin"));
 
-        // /whoAmI
+
+        // GET /whoAmI
     if (dirs.length == 1 && dirs[0].equals("whoAmI")) {
         System.out.println("Forwarding to Customer.whoAmI()");
         String result = Customer.whoAmI(sessionCid);
@@ -37,7 +38,8 @@
             out.println(result);
         }
 
-        // /customers/login
+        // login
+        // POST /customers/login
     } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("login") && verb.equals("POST")) {
         System.err.println("Forwarding to Customer.login()");
         InputStream body = request.getInputStream();
@@ -45,23 +47,28 @@
         JsonObject payload = jsonReader.readObject();
         JsonObjectBuilder result = Json.createObjectBuilder();
 
-        int cid = Customer.login(payload, result);
+        String[] states = Customer.login(payload, result).split("/");
+        isAdmin = Integer.parseInt(states[0]);
+        int cid = Integer.parseInt(states[1]);
 
         if(cid > 0) {
             out.println(result.build().toString());
             session.setAttribute("cid", cid);
-            System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid"));
+            session.setAttribute("isAdmin", isAdmin);
+            System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid") + " " + session.getAttribute("isAdmin"));
         } else {
             response.sendError(response.SC_NOT_FOUND);
             session.invalidate();
         }
 
-        // /customers/logout
+        // logout
+        // POST /customers/logout
     } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("logout") && verb.equals("POST")) {
         System.err.println("cid: " + sessionCid + " logged out");
         session.invalidate();
 
-        // /customers/signup
+        // signup
+        // POST /customers/signup
     } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("signup") && verb.equals("POST")) {
         System.err.println("Forwarding to Customer.signup()");
         InputStream body = request.getInputStream();
@@ -79,7 +86,8 @@
             session.invalidate();
         }
 
-        // /books/popular
+        // get popular books
+        // GET /books/popular?start=&end=&limit=&offset=
     } else if (dirs.length == 2 && dirs[0].equals("books") && dirs[1].equals("popular") && verb.equals("GET")) {
         System.err.println("Forwarding to Book.popular()");
         String start = request.getParameter("start");
@@ -97,7 +105,8 @@
             out.println(result);
         }
 
-        // /books/:ISBN
+        // get details
+        // GET /books/:ISBN
     } else if (dirs.length == 2 && dirs[0].equals("books") && verb.equals("GET")) {
         System.err.println("Forwarding to Book.details() ");
         String isbn = dirs[1];
@@ -109,7 +118,8 @@
             out.println(result);
         }
 
-        // /authors/popular
+        // get popular authors
+        // GET /authors/popular?start=&end=&limit=&offset=
     } else if (dirs.length == 2 && dirs[0].equals("authors") && dirs[1].equals("popular") && verb.equals("GET")) {
         System.err.println("Forwarding to Author.popular()");
         String start = request.getParameter("start");
@@ -127,7 +137,8 @@
             out.println(result);
         }
 
-        // /authors/:authid
+        // get details of a author
+        // GET /authors/:authid
     } else if (dirs.length == 2 && dirs[0].equals("authors") && !dirs[1].equals("degree") && verb.equals("GET")) {
         System.err.println("Forwarding to Author.details()");
         int authid = Integer.parseInt(dirs[1]);
@@ -139,7 +150,8 @@
             out.println(result);
         }
 
-        // /publishers/popular
+        // get popular publishers
+        // GET /publishers/popular?start=&end=&limit=&offset=
     } else if (dirs.length == 2 && dirs[0].equals("publishers") && dirs[1].equals("popular") && verb.equals("GET")) {
         System.err.println("Forwarding to Publisher.popular()");
         String start = request.getParameter("start");
@@ -157,7 +169,8 @@
             out.println(result);
         }
 
-        // /publishers/:pid
+        // get details of a publisher
+        // GET /publishers/:pid
     } else if (dirs.length == 2 && dirs[0].equals("publishers") && verb.equals("GET")) {
         System.err.println("Forwarding to Publisher.details()");
         int pid = Integer.parseInt(dirs[1]);
@@ -169,7 +182,8 @@
             out.println(result);
         }
 
-        //GET /feedbacks?isbn=
+        // get feedbacks of a certain book
+        // GET /feedbacks?isbn=&limit=&offset=&orderBy
     } else if (dirs.length == 1 && dirs[0].equals("feedbacks") && verb.equals("GET")) {
         System.err.println("Forwarding to Feedback.feedbacks()");
         String _limit = request.getParameter("limit");
@@ -187,6 +201,7 @@
             out.println(result);
         }
 
+        // get details of a feedback
         // GET /feedbacks/:fid
     } else if (dirs.length == 2 && dirs[0].equals("feedbacks") && verb.equals("GET")) {
         System.err.println("Forwarding to Feedback.details()");
@@ -201,27 +216,35 @@
             out.println(result);
         }
 
+        // (LOGINED) assess a feedback
         // PUT /feedbacks/:fid
     } else if (dirs.length == 2 && dirs[0].equals("feedbacks") && verb.equals("PUT")) {
         System.err.println("Forwarding to Feedback.assess()");
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         int fid = Integer.parseInt(dirs[1]);
-        ///////////////TBD
-        int cid = 2;
 
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
 
-        String result = Feedback.assess(cid, fid, payload);
+        String result = Feedback.assess(authcid, fid, payload);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
             out.println(result);
         }
 
+        // (LOGINED) new feedback
         // POST /feedbacks
     } else if (dirs.length == 1 && dirs[0].equals("feedbacks") && verb.equals("POST")) {
         System.err.println("Forwarding to Feedback.add()");
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
@@ -233,9 +256,14 @@
             out.println(result);
         }
 
-        // /customers/useful
+        // (ADMIN) get most useful customers
+        // GET /customers/useful?limit=&offset=
     } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("useful") && verb.equals("GET")) {
         System.err.println("Forwarding to Customer.useful()");
+        if(isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         String _limit = request.getParameter("limit");
         String _offset = request.getParameter("offset");
         int limit, offset;
@@ -248,9 +276,15 @@
         } else {
             out.println(result);
         }
-        // /customers/trusted
+
+        // (ADMIN) get most trusted customers
+        // GET /customers/trusted?limit=&offset=
     } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("trusted") && verb.equals("GET")) {
         System.err.println("Forwarding to Customer.useful()");
+        if(isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         String _limit = request.getParameter("limit");
         String _offset = request.getParameter("offset");
         int limit, offset;
@@ -264,11 +298,15 @@
             out.println(result);
         }
 
-        // /customers/:cid
-        // authentication required
-        //////////// TBD
+        // username of cid
+        // (LOGINED) extra details if the customer identified by authcid is trusted by cid
+        // GET /customers/:cid
     } else if (dirs.length == 2 && dirs[0].equals("customers") && verb.equals("GET")) {
         System.err.println("Forwarding to Customers.details()");
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         int cid = Integer.parseInt(dirs[1]);
 
         String result = Customer.details(authcid, cid);
@@ -278,8 +316,14 @@
             out.println(result);
         }
 
+        // (LOGINED) authcid trust or distrust cid
+        // PUT /customers/:cid
     } else if (dirs.length == 2 && dirs[0].equals("customers") && verb.equals("PUT")) {
         System.err.println("Forwarding to Customers.trust()");
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
@@ -292,24 +336,35 @@
             out.println(result);
         }
 
+        // (LOGINED) authcid confirm a order
+        // POST /orders
     } else if (dirs.length == 1 && dirs[0].equals("orders") && verb.equals("POST")) {
         System.err.println("Forwarding to Orders.add()");
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
 
-        // sessionCid
-        ///////////////////////////// TBD
-        String result = Order.add(sessionCid, payload);
+        String result = Order.add(authcid, payload);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
             out.println(result);
         }
 
-        // /orders/orders
+
+        // (ADMIN) get sales data from 'start' to 'end'
+        // 'span' has not supported yet
+        // GET /orders/orders?start=&end=
     } else if (dirs.length == 2 && dirs[0].equals("orders") && dirs[1].equals("orders") && verb.equals("GET")) {
         System.err.println("Forwarding to Order.orders()");
+        if(isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         String start = request.getParameter("start");
         String end = request.getParameter("end");
         String span = request.getParameter("span");
@@ -321,50 +376,56 @@
             out.println(result);
         }
 
-        // /orders/:orderid
+        // (LOGINED) get order details
+        // GET /orders/:orderid
     } else if (dirs.length == 2 && dirs[0].equals("orders") && verb.equals("GET")) {
+        ////////////////////////////////////TBD
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         System.err.println("Forwarding to Orders.details()");
         int orderid = Integer.parseInt(dirs[1]);
 
-        String result = Order.details(orderid);
+        String result = Order.details(authcid, isAdmin, orderid);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND, "Order not found");
         } else {
             out.println(result);
         }
 
+        // (LOGINED) get all items in the cart
+        // GET /carts
     } else if (dirs.length == 1 && dirs[0].equals("carts") && verb.equals("GET")) {
         System.err.println("Forwarding to Order.cart()");
-//        String _limit = request.getParameter("limit");
-//        String _offset = request.getParameter("offset");
-//        int limit, offset;
-//        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
-//        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
-        String _cid = request.getParameter("customer");
-        int cid = Integer.parseInt(_cid);
-        //////////////////// TBD
-        // use SESSION ID
 
-        String result = Order.cart(cid);
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
+        String result = Order.cart(authcid);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
             out.println(result);
         }
 
+        // (LOGINED) get items of the cart
+        // GET /carts/:cart_id
     } else if (dirs.length == 2 && dirs[0].equals("carts") && verb.equals("GET")) {
         System.err.println("Forwarding to Order.cartDetails()");
-//        String _limit = request.getParameter("limit");
-//        String _offset = request.getParameter("offset");
-//        int limit, offset;
-//        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
-//        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         String[] customerBook = dirs[1].split("-");
         int cid = Integer.parseInt(customerBook[0]);
         String isbn = customerBook[1];
 
-        //////////////////// TBD
-        // use SESSION ID
+        if(isAdmin == 0 && authcid != cid) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
 
         String result = Order.cartDetails(cid, isbn);
         if (result == null) {
@@ -373,23 +434,35 @@
             out.println(result);
         }
 
+        // (LOGINED) add a new item
         // POST /carts
     } else if (dirs.length == 1 && dirs[0].equals("carts") && verb.equals("POST")) {
         System.err.println("Forwarding to Order.add2cart()");
+
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
 
-        String result = Order.add2Cart(sessionCid, payload);
+        String result = Order.add2Cart(authcid, payload);
         if (result == null) {
             response.sendError(response.SC_BAD_REQUEST);
         } else {
             out.println(result);
         }
 
+        // (ADMIN) add a new publisher
         // POST /publishers
     } else if (dirs.length == 1 && dirs[0].equals("publishers") && verb.equals("POST")) {
         System.err.println("Forwarding to Publisher.add()");
+
+        if(authcid < 0 || isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
@@ -400,8 +473,16 @@
         } else {
             out.println(result);
         }
+
+        // (ADMIN) add a new author
+        // POST /authors
     } else if (dirs.length == 1 && dirs[0].equals("authors") && verb.equals("POST")) {
         System.err.println("Forwarding to Author.add()");
+
+        if(authcid < 0 || isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
@@ -412,8 +493,16 @@
         } else {
             out.println(result);
         }
+
+        // (ADMIN) add a new book
+        // POST /books
     } else if (dirs.length == 1 && dirs[0].equals("books") && verb.equals("POST")) {
         System.err.println("Forwarding to Book.add()");
+
+        if(authcid < 0 || isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
@@ -424,6 +513,9 @@
         } else {
             out.println(result);
         }
+
+        // predict publisher
+        // GET /publishers?name=&limit=
     } else if (dirs.length == 1 && dirs[0].equals("publishers") && verb.equals("GET")) {
         System.err.println("Forwarding to Publisher.find()");
         String name = request.getParameter("name");
@@ -436,6 +528,9 @@
         } else {
             out.println(result);
         }
+
+        // predict author
+        // GET /publisher?name=&limit=
     } else if (dirs.length == 1 && dirs[0].equals("authors") && verb.equals("GET")) {
         System.err.println("Forwarding to Author.find()");
         String name = request.getParameter("name");
@@ -450,6 +545,7 @@
             out.println(result);
         }
 
+        // simple/advanced book search
         // GET /books?all=  /books?advanced=
     } else if (dirs.length == 1 && dirs[0].equals("books") && verb.equals("GET")) {
 
@@ -480,9 +576,15 @@
             out.println(result);
         }
 
+        // (ADMIN) update inventory of a book
         // PUT /books/:isbn
     } else if (dirs.length == 2 && dirs[0].equals("books") && verb.equals("PUT")) {
         System.err.println("Forwarding to Book.add()");
+
+        if(authcid < 0 || isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
@@ -494,23 +596,35 @@
             out.println(result);
         }
 
+        // update amount of a certain cart item
         // PUT /carts/:cart_id
     } else if (dirs.length == 2 && dirs[0].equals("carts") && verb.equals("PUT")) {
         System.err.println("Forwarding to Order.add2Cart()");
+
+        if(authcid < 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);
         JsonObject payload = jsonReader.readObject();
 
-        String result = Order.add2Cart(sessionCid, payload);
+        String result = Order.add2Cart(authcid, payload);
         if (result == null) {
             response.sendError(response.SC_BAD_REQUEST);
         } else {
             out.println(result);
         }
 
+        // (ADMIN)get degree of two authors
         // GET /authors/degree
     } else if (dirs.length == 2 && dirs[0].equals("authors") && dirs[1].equals("degree") && verb.equals("GET")) {
         System.err.println("Forwarding to Author.degree()");
+
+        if(authcid < 0 || isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
         String author1 = request.getParameter("author1");
         String author2 = request.getParameter("author2");
 
@@ -520,6 +634,8 @@
         } else {
             out.println(result);
         }
+
+
     } else {
         System.err.println("Unknown method");
         response.sendError(response.SC_METHOD_NOT_ALLOWED, "Method you used is not allowed. Request URI: " + URI);

@@ -55,6 +55,8 @@ public class Customer {
             customer.add("trusted", trusted);
         }
 
+        customer.add("admin", rs.getBoolean("admin"));
+
         return customer;
     }
 
@@ -212,7 +214,7 @@ public class Customer {
         }
     }
 
-    public static int login(JsonObject payload, JsonObjectBuilder result) {
+    public static String login(JsonObject payload, JsonObjectBuilder result) {
         JsonObject info = payload.getJsonObject("customer");
         String username = info.getString("username");
         String password = info.getString("password");
@@ -222,7 +224,7 @@ public class Customer {
         try {
             Connector con = new Connector();
 
-            String sql = "SELECT cid FROM Customer WHERE";
+            String sql = "SELECT * FROM Customer WHERE";
             sql += " username = \"" + username + "\"";
             sql += " AND password = SHA1(\"" + password + "\")";
 
@@ -232,16 +234,17 @@ public class Customer {
                 int cid = rs.getInt(1);
                 JSONCustomer(cid, cid, customer);
                 result.add("customer", customer);
-                return cid;
+                System.out.println("" + rs.getInt("admin") + "/" + cid);
+                return "" + rs.getInt("admin") + "/" + cid;
             } else {
-                return -1;
+                return "0/-1";
             }
 
         } catch(Exception e) {
             System.out.println("Failed to validate");
             System.err.println(e.getMessage());
 
-            return -1;
+            return "0/-1";
         }
     }
 

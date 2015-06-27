@@ -1,6 +1,10 @@
 Description | HTTP method | URL | JAVA implementation | Note
 -- | -- | -- | -- | --
-`获取热门图书` | GET | /api/books/popular?limit=&offset=&start=&end= | Book.popular() | *ADMIN*: 返回sales
+`获取登陆状态` | GET | /api/whoAmI | Customer.whoAmI() | 若已登录，返回登陆的customer的信息
+`登陆` | POST | /api/customers/login | Customer.login() | payload={Customer:{username, password}}
+`登出` | POST | /api/customers/logout | - | 
+`注册` | POST | /api/customers/signup | Customer.signup() | payload={Customer}
+`获取热门图书` | GET | /api/books/popular?limit=&offset=&start=&end= | Book.popular() |
 `获取图书详细信息` | GET | /api/books/:isbn | Book.details()
 搜索图书 | GET | /api/books/search | Book.simpleSearch(), Book.advancedSearch()
 `搜索图书 SimpleSearch` | GET | /api/books?all=&orderBy= | Book.simpleSearch(), all里的关键词由空格隔开，关键词可被ISBN, title, subtitle, authname, summary, pubname, keyword, subject之一匹配，关键词之间的关系是AND。orderBy总共有6种选择，奇数代表降序，偶数是升序，0/1出版年份排序，2/3平均评分排序，4/5（当用户登陆之后可用）被当前用户所信任的用户的平均评分，默认为1 | *PARTIALLY LOGINED*

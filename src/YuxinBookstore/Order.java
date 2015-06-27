@@ -64,7 +64,7 @@ public class Order {
         order.add("orderItems", itemids);
     }
 
-    public static String details(final int orderid) {
+    public static String details(int authcid, int isAdmin, final int orderid) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         Connector con = null;
 
@@ -88,6 +88,10 @@ public class Order {
         try {
             rs = con.stmt.executeQuery(sql);
             rs.next();
+
+            if(isAdmin == 0 && rs.getInt("cid") != authcid) {
+                return null;
+            }
 
             order = JSONOrder(rs, order);
         } catch(Exception e) {
