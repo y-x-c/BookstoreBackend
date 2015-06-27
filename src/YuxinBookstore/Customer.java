@@ -196,6 +196,22 @@ public class Customer {
         }
     }
 
+    public static String whoAmI(int sessionCid) {
+        if(sessionCid < 0) {
+            return null;
+        } else {
+            try {
+                JsonObjectBuilder customer = Json.createObjectBuilder();
+                customer = JSONCustomer(sessionCid, sessionCid, customer);
+                JsonObjectBuilder result = Json.createObjectBuilder();
+                result.add("customer", customer);
+                return result.build().toString();
+            } catch(Exception e) {
+                return null;
+            }
+        }
+    }
+
     public static int login(JsonObject payload, JsonObjectBuilder result) {
         JsonObject info = payload.getJsonObject("customer");
         String username = info.getString("username");

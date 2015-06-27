@@ -26,8 +26,19 @@
 
     System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid"));
 
-    // /customers/login
-    if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("login") && verb.equals("POST")) {
+        // /whoAmI
+    if (dirs.length == 1 && dirs[0].equals("whoAmI")) {
+        System.out.println("Forwarding to Customer.whoAmI()");
+        String result = Customer.whoAmI(sessionCid);
+
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+
+        // /customers/login
+    } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("login") && verb.equals("POST")) {
         System.err.println("Forwarding to Customer.login()");
         InputStream body = request.getInputStream();
         JsonReader jsonReader = Json.createReader(body);

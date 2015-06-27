@@ -74,14 +74,15 @@ CREATE TABLE Customer(
     name VARCHAR(20) NOT NULL,
     email VARCHAR(50),
     phone VARCHAR(50),
+    admin TINYINT(1),
     PRIMARY KEY (cid),
     UNIQUE KEY (username)
 ) CHARACTER SET utf8;
 
 #1
-INSERT INTO Customer (username, password, name, email, phone) VALUES ("root", SHA1("root"), "administrator", "root@YuxinBookstore", "110");
+INSERT INTO Customer (username, password, name, email, phone, admin) VALUES ("root", SHA1("root"), "administrator", "root@YuxinBookstore", "110", 1);
 #2
-INSERT INTO Customer (username, password, name, email, phone) VALUES ("chenyuxin", SHA1("chenyuxin"), "Yuxin Chen", "chenyuxin.mail@gmail.com", "18601669278");
+INSERT INTO Customer (username, password, name, email, phone, admin) VALUES ("chenyuxin", SHA1("chenyuxin"), "Yuxin Chen", "chenyuxin.mail@gmail.com", "18601669278", 1);
 #3
 INSERT INTO Customer (username, password, name, email, phone) VALUES ("nisiyu", SHA1("nisiyu"), "Siyu Ni", "nisiyu@qq.com", "111111111");
 #4
