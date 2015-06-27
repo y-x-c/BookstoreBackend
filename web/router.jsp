@@ -26,7 +26,7 @@
 
     System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid"));
 
-        // /customers/login
+    // /customers/login
     if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("login") && verb.equals("POST")) {
         System.err.println("Forwarding to Customer.login()");
         InputStream body = request.getInputStream();
@@ -130,21 +130,21 @@
 
         // /publishers/popular
     } else if (dirs.length == 2 && dirs[0].equals("publishers") && dirs[1].equals("popular") && verb.equals("GET")) {
-            System.err.println("Forwarding to Publisher.popular()");
-            String start = request.getParameter("start");
-            String end = request.getParameter("end");
-            String _limit = request.getParameter("limit");
-            String _offset = request.getParameter("offset");
-            int limit, offset;
+        System.err.println("Forwarding to Publisher.popular()");
+        String start = request.getParameter("start");
+        String end = request.getParameter("end");
+        String _limit = request.getParameter("limit");
+        String _offset = request.getParameter("offset");
+        int limit, offset;
         if (_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
-            if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
 
-            String result = Publisher.popular(limit, offset, start, end);
-            if (result == null) {
-                response.sendError(response.SC_NOT_FOUND);
-            } else {
-                out.println(result);
-            }
+        String result = Publisher.popular(limit, offset, start, end);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
 
         // /publishers/:pid
     } else if (dirs.length == 2 && dirs[0].equals("publishers") && verb.equals("GET")) {
@@ -154,6 +154,24 @@
         String result = Publisher.details(pid);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND, "Publisher not found");
+        } else {
+            out.println(result);
+        }
+
+        //GET /feedbacks?isbn=
+    } else if (dirs.length == 1 && dirs[0].equals("feedbacks") && verb.equals("GET")) {
+        System.err.println("Forwarding to Feedback.feedbacks()");
+        String _limit = request.getParameter("limit");
+        String _offset = request.getParameter("offset");
+        int limit, offset;
+        if (_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+        String isbn = request.getParameter("isbn");
+        String _orderBy = request.getParameter("orderBy");
+
+        String result = Feedback.feedbacks(isbn, _orderBy, authcid, limit, offset);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
         } else {
             out.println(result);
         }
@@ -172,6 +190,7 @@
             out.println(result);
         }
 
+        // PUT /feedbacks/:fid
     } else if (dirs.length == 2 && dirs[0].equals("feedbacks") && verb.equals("PUT")) {
         System.err.println("Forwarding to Feedback.assess()");
         int fid = Integer.parseInt(dirs[1]);
@@ -189,7 +208,7 @@
             out.println(result);
         }
 
-        // /feedbacks
+        // POST /feedbacks
     } else if (dirs.length == 1 && dirs[0].equals("feedbacks") && verb.equals("POST")) {
         System.err.println("Forwarding to Feedback.add()");
         InputStream body = request.getInputStream();

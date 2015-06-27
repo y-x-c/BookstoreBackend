@@ -84,6 +84,47 @@ public class Feedback {
         return result.build().toString();
     }
 
+
+    public static String feedbacks(String isbn, String _orderBy, int authcid, int limit, int offset) {
+        try {
+            JsonObjectBuilder result = Json.createObjectBuilder();
+            int orderBy = _orderBy == null ? 0 : Integer.parseInt(_orderBy);
+
+            String sql = "SELECT *, (SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness, " +
+                    "(SELECT U.rating FROM Usefulness U WHERE U.fid = F.fid AND U.cid = " + authcid + ") AS opinion " +
+                    " FROM Feedback F WHERE isbn = '" + isbn + "'";
+
+            if(orderBy == 0) sql += " ORDER BY usefulness DESC";
+            if(orderBy == 1) sql += " ORDER BY F.time DESC";
+            sql += " LIMIT " + limit + " OFFSET " + offset;
+            System.out.println(sql);
+
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            JsonArrayBuilder feedbacks = Json.createArrayBuilder();
+            while(rs.next()) {
+                JsonObjectBuilder feedback = Json.createObjectBuilder();
+                feedbacks.add(JSONFeedback(rs, feedback));
+            }
+
+            sql = "SELECT COUNT(*) AS total FROM Feedback F WHERE isbn = '" + isbn + "'";
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+            JsonObjectBuilder meta = Json.createObjectBuilder();
+            meta.add("total", rs.getInt("total"));
+            result.add("meta", meta);
+
+            result.add("feedbacks", feedbacks);
+            return result.build().toString();
+        } catch(Exception e) {
+            System.out.println("Failed to get feedbacks");
+            System.err.println(e.getMessage());
+
+            return null;
+        }
+    }
+
     public static String add(JsonObject payload) {
         try {
             JsonObjectBuilder result = Json.createObjectBuilder();
