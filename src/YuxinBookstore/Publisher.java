@@ -202,13 +202,22 @@ public class Publisher {
 
                 sales.add(pid, _sales);
             }
+
+            sql = "SELECT COUNT(DISTINCT B.isbn) AS total FROM ItemInOrder I, Book B, Orders O " +
+                    "WHERE I.isbn = B.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed + "'";
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+
+            JsonObjectBuilder meta = Json.createObjectBuilder();
+            meta.add("total", rs.getInt("total"));
+
+            result.add("meta", meta);
+            return result.add("publishers", publishers).add("sales", sales).build().toString();
         } catch (Exception e) {
             System.out.println("Failed to query popular publishers");
             System.err.println(e.getMessage());
             return null;
         }
-
-        return result.add("publishers", publishers).add("sales", sales).build().toString();
     }
 
 ////////////////////////////////////////////////

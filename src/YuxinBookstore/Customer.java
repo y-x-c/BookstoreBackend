@@ -93,8 +93,8 @@ public class Customer {
         try {
             String sql = "SELECT *, " +
                     "(SELECT COUNT(*) FROM TrustRecords T1 WHERE T1.cid2 = C.cid AND T1.trust = 1) - (SELECT COUNT(*) FROM TrustRecords T2 WHERE T2.cid2 = C.cid AND T2.trust = 0) AS score " +
-                    "FROM Customer C ORDER BY " +
-                    "score DESC";
+                    "FROM Customer C ORDER BY " + "score DESC" +
+                    " LIMIT " + limit + " OFFSET " + offset;
             //System.err.println(sql);
             Connector con = new Connector();
             ResultSet rs = con.stmt.executeQuery(sql);
@@ -109,14 +109,22 @@ public class Customer {
                 String _cid = Integer.toString(cid);
                 scores.add(_cid, score);
             }
+
+            sql = "SELECT COUNT(C.cid) AS total FROM Customer C";
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+
+            JsonObjectBuilder meta = Json.createObjectBuilder();
+            meta.add("total", rs.getInt("total"));
+
+            result.add("meta", meta);
+            result.add("customers", customers).add("scores", scores);
+            return result.build().toString();
         } catch(Exception e) {
             System.out.println("Failed to query most trusted customers");
             System.out.println(e.getMessage());
             return null;
         }
-
-        result.add("customers", customers).add("scores", scores);
-        return result.build().toString();
     }
 
     public static String useful(int authcid, int limit, int offset) {
@@ -125,14 +133,17 @@ public class Customer {
         JsonObjectBuilder ratings = Json.createObjectBuilder();
 
         try {
-            String sql = "SELECT cid, AVG(rating) AS avgRating FROM Usefulness U GROUP BY U.cid ORDER BY avgRating DESC";
+            String sql = "SELECT *, (SELECT AVG(rating) FROM Usefulness U, Feedback F WHERE U.fid = F.fid AND F.cid = C.cid) AS avgRating" +
+                    " FROM Customer C ORDER BY avgRating DESC " +
+                    " LIMIT " + limit + " OFFSET " + offset;
 
             //System.err.println(sql);
             Connector con = new Connector();
             ResultSet rs = con.stmt.executeQuery(sql);
 
             while(rs.next()) {
-                final int cid = rs.getInt("cid"), rating = rs.getInt("avgRating");
+                final int cid = rs.getInt("cid");
+                final double rating = rs.getDouble("avgRating");
 
                 JsonObjectBuilder customer = Json.createObjectBuilder();
                 customer = JSONCustomer(authcid, cid, customer);
@@ -141,14 +152,22 @@ public class Customer {
                 String _cid = Integer.toString(cid);
                 ratings.add(_cid, rating);
             }
+
+            sql = "SELECT COUNT(C.cid) AS total FROM Customer C";
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+
+            JsonObjectBuilder meta = Json.createObjectBuilder();
+            meta.add("total", rs.getInt("total"));
+
+            result.add("meta", meta);
+            result.add("customers", customers).add("ratings", ratings);
+            return result.build().toString();
         } catch(Exception e) {
             System.out.println("Failed to query most useful customers");
             System.out.println(e.getMessage());
             return null;
         }
-
-        result.add("customers", customers).add("ratings", ratings);
-        return result.build().toString();
     }
 
     public static String trust(int authcid, int cid, JsonObject payload) {

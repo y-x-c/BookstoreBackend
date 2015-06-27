@@ -216,13 +216,21 @@ public class Author {
 
                 sales.add(authid, _sales);
             }
+
+            sql = "SELECT COUNT(DISTINCT I.isbn) AS total FROM ItemInOrder I, WrittenBy W, Orders O " +
+                    "WHERE I.isbn = W.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed + "'";
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+            JsonObjectBuilder meta = Json.createObjectBuilder();
+            meta.add("total", rs.getInt("total"));
+
+            result.add("meta", meta);
+            return result.add("authors", authors).add("sales", sales).build().toString();
         } catch (Exception e) {
             System.out.println("Failed to query popular authors");
             System.err.println(e.getMessage());
             return null;
         }
-
-        return result.add("authors", authors).add("sales", sales).build().toString();
     }
 
     ////////////////////////////////////////////////

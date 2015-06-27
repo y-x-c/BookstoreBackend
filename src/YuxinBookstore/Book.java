@@ -399,15 +399,23 @@ public class Book {
                 books.add(book);
                 sales.add(isbn, _sales);
             }
+
+            sql =  "SELECT COUNT(DISTINCT isbn) AS total FROM ItemInOrder I, Orders O " +
+                    "WHERE I.orderid = O.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed + "'";
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+            JsonObjectBuilder meta = Json.createObjectBuilder();
+            meta.add("total", rs.getInt("total"));
+            result.add("meta", meta);
+
+            result.add("books", books);
+            result.add("sales", sales);
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to query popular books");
             System.err.println(e.getMessage());
             return null;
         }
-
-        result.add("books", books);
-        result.add("sales", sales);
-        return result.build().toString();
     }
 
     ////////////////////////////////////
