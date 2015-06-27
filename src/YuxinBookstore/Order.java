@@ -26,6 +26,12 @@ public class Order {
         order.add("customer", rs.getInt("cid"));
         order.add("address", rs.getString("addr"));
 
+        String sql = "SELECT SUM(I.price * I.amount) AS totalPrice FROM ItemInOrder I WHERE orderid = " + orderid;
+        Connector con = new Connector();
+        ResultSet rs2 = con.stmt.executeQuery(sql);
+        rs2.next();
+        order.add("totalPrice", rs2.getDouble("totalPrice"));
+
         return order;
     }
 
