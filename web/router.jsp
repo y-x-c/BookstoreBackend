@@ -25,7 +25,7 @@
     int isAdmin = session.getAttribute("isAdmin") == null ? 0 : (Integer)session.getAttribute("isAdmin");
 
     System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid") + " " + session.getAttribute("isAdmin"));
-    authcid = 2; isAdmin = 1;
+//    authcid = 2; isAdmin = 1;
 
         // GET /whoAmI
     if (dirs.length == 1 && dirs[0].equals("whoAmI")) {
@@ -88,7 +88,7 @@
 
         // GET /feedbacks/statistic/:isbn
     } else if (dirs.length == 3 && dirs[0].equals("feedbacks") && dirs[1].equals("statistic") && verb.equals("GET")) {
-        System.err.println("Forwarding to Order.orders()");
+        System.err.println("Forwarding to Feedback.statistic()");
         String isbn = dirs[2];
 
         String result = Feedback.statistic(isbn);
@@ -119,7 +119,7 @@
         }
 
         // (ADMIN) get lastest orders
-        // GET /orders/latest
+        // GET /api/orders/latest?limit=&offset=
     } else if (dirs.length == 2 && dirs[0].equals("orders") && dirs[1].equals("latest") && verb.equals("GET")) {
         if(authcid < 0 || isAdmin == 0) {
             response.sendError(response.SC_NOT_FOUND);
@@ -429,7 +429,6 @@
         // (LOGINED) get order details
         // GET /orders/:orderid
     } else if (dirs.length == 2 && dirs[0].equals("orders") && verb.equals("GET")) {
-        ////////////////////////////////////TBD
         if(authcid < 0) {
             response.sendError(response.SC_NOT_FOUND);
         }
@@ -652,7 +651,7 @@
             out.println(result);
         }
 
-        // update amount of a certain cart item
+        // LOGINED update amount of a certain cart item
         // PUT /carts/:cart_id
     } else if (dirs.length == 2 && dirs[0].equals("carts") && verb.equals("PUT")) {
         System.err.println("Forwarding to Order.add2Cart()");
