@@ -48,10 +48,10 @@ Description | HTTP Method | URL | JAVA Implementation | Permission
 `信任某个用户` | PUT | /customers/:cid | Customer.trust() | *LOGINED*
 `确认下单` | POST | /orders | Orders.add() | *LOGINED*
 `获取区间内每天的orders数量` | GET | /orders/orders?start=&end= | *ADMIN*
-`获取订单详情` | GET | /orders/:orderid | *LOGINED*
-`获取购物车内的物品列表` | GET | /carts | *LOGINED*
-`获取购物车内某件物品信息` | GET | /carts/:cart_id | *LOGINED*
-`加入新物品到购物车内` | POST | /carts | *LOGINED*
+`获取订单详情` | GET | /orders/:orderid | Orders.details() | *LOGINED*
+`获取购物车内的物品列表` | GET | /carts | Order.cart() | *LOGINED*
+`获取购物车内某件物品信息` | GET | /carts/:cart_id |  Order.cartDetails() | *LOGINED*
+`加入新物品到购物车内` | POST | /carts | Order.add2cart() | *LOGINED*
 `添加出版社` | POST | /publisher | Publisher.add() | *ADMIN*
 `添加作者` | POST | /authors | Author.add() | *ADMIN*
 `添加图书` | POST | /books | Book.add() | *ADMIN*
