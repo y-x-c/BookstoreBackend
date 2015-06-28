@@ -30,7 +30,7 @@
         // GET /whoAmI
     if (dirs.length == 1 && dirs[0].equals("whoAmI")) {
         System.out.println("Forwarding to Customer.whoAmI()");
-        String result = Customer.whoAmI(authcid, request.getRemoteAddr());
+        String result = Customer.whoAmI(authcid, isAdmin, request.getRemoteAddr());
 
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND, (String)request.getRemoteAddr());
@@ -311,7 +311,7 @@
         if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
         if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
 
-        String result = Customer.useful(authcid, limit, offset);
+        String result = Customer.useful(authcid, isAdmin, limit, offset);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
@@ -332,7 +332,7 @@
         if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
         if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
 
-        String result = Customer.trusted(authcid, limit, offset);
+        String result = Customer.trusted(authcid, isAdmin, limit, offset);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
@@ -347,7 +347,7 @@
 
         int cid = Integer.parseInt(dirs[1]);
 
-        String result = Customer.details(authcid, cid);
+        String result = Customer.details(authcid, isAdmin, cid);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND, "Customer not found");
         } else {
@@ -367,7 +367,7 @@
         JsonObject payload = jsonReader.readObject();
         int cid = Integer.parseInt(dirs[1]);
 
-        String result = Customer.trust(authcid, cid, payload);
+        String result = Customer.trust(authcid, isAdmin, cid, payload);
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
         } else {
