@@ -1,5 +1,12 @@
 # Bookstore Backend
 
+### Relative Page
+Online Demo: [http://chenyux.in/bookstore](http://chenyux.in/bookstore)
+
+Bookstore Frontend: [http://github.com/Orthocenter/BookstoreFrontend](http://github.com/Orthocenter/BookstoreFrontend)
+
+Bookstore CLI: [http://github.com/Orthocenter/BookstoreCLI](http://github.com/Orthocenter/CLI)
+
 ## Introduction
 
 - A roughly RESTful API created for Bookstore project using JSP.
