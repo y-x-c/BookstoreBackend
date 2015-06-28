@@ -86,6 +86,18 @@
             session.invalidate();
         }
 
+        // GET /feedbacks/statistic/:isbn
+    } else if (dirs.length == 3 && dirs[0].equals("feedbacks") && dirs[1].equals("statistic") && verb.equals("GET")) {
+        System.err.println("Forwarding to Order.orders()");
+        String isbn = dirs[2];
+
+        String result = Feedback.statistic(isbn);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+
         // (ADMIN) get sales data from 'start' to 'end'
         // 'span' has not supported yet
         // GET /customers/visits?start=&end=

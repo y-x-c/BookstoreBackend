@@ -22,6 +22,22 @@ public class Author {
         author.add("name", authname);
         author.add("intro", intro == null ? "" : intro);
 
+        try {
+            String sql = "SELECT * FROM WrittenBy W WHERE" +
+                    " W.authid = " + authid;
+
+            Connector con = new Connector();
+            ResultSet rs2 = con.stmt.executeQuery(sql);
+            JsonArrayBuilder books = Json.createArrayBuilder();
+            while (rs2.next()) {
+                final String isbn = rs2.getString("W.isbn");
+                books.add(isbn);
+            }
+            author.add("books", books);
+        } catch (Exception e) {
+            throw new Exception();
+        }
+
         return author;
     }
 
@@ -87,23 +103,6 @@ public class Author {
             rs.next();
 
             author = JSONAuthor(rs, author);
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-
-            return null;
-        }
-
-        try {
-            sql = "SELECT * FROM WrittenBy W WHERE" +
-                    " W.authid = " + authid;
-
-            ResultSet rs = con.stmt.executeQuery(sql);
-            JsonArrayBuilder books = Json.createArrayBuilder();
-            while (rs.next()) {
-                final String isbn = rs.getString("W.isbn");
-                books.add(isbn);
-            }
-            author.add("books", books);
         } catch (Exception e) {
             System.err.println(e.getMessage());
 

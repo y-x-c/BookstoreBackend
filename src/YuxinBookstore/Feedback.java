@@ -57,6 +57,32 @@ public class Feedback {
         return JSONFeedback(rs, feedback);
     }
 
+    public static String statistic(String isbn) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonObjectBuilder statistic = Json.createObjectBuilder();
+
+        try {
+            String sql = "SELECT COUNT(*) AS amount, F.score FROM Feedback F" +
+                    " WHERE F.isbn = '" + isbn + "'" +
+                    " GROUP BY score ORDER BY score DESC";
+
+//            System.out.println(sql);
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                statistic.add(rs.getString("F.score"), rs.getInt("amount"));
+            }
+
+        } catch (Exception e) {
+            System.out.println("Failed to get amount of orders");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
+        return result.add("statistic", statistic).build().toString();
+    }
+
     public static String details(final int cid, final int fid) {
         JsonObjectBuilder result = Json.createObjectBuilder();
 
