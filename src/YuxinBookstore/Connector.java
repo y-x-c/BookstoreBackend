@@ -7,9 +7,12 @@ public class Connector {
 	public Statement stmt;
 	public Connector() throws Exception {
 		try{
-		 	String userName = "fudanu33";
-	   		String password = "irmtst89";
-            String url = "jdbc:mysql://10.141.208.26/fudandbd33?useUnicode=true&characterEncoding=utf-8";
+//		 	String userName = "fudanu33";
+//	   		String password = "irmtst89";
+//            String url = "jdbc:mysql://10.141.208.26/fudandbd33?useUnicode=true&characterEncoding=utf-8";
+			String userName = "fudandb";
+			String password = "fudandbpj";
+			String url = "jdbc:mysql://45.55.188.100/fudandb?useUnicode=true&characterEncoding=utf-8";
             Class.forName ("com.mysql.jdbc.Driver").newInstance();
             con = DriverManager.getConnection (url, userName, password);
 
@@ -19,7 +22,7 @@ public class Connector {
 			//stmt=con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
         } catch(Exception e) {
 			System.err.println("Unable to open mysql jdbc connection. The error is as follows,\n");
-            		System.err.println(e.getMessage());
+			System.err.println(e.getMessage());
 			throw(e);
 		}
 
@@ -36,7 +39,11 @@ public class Connector {
 
 	}
 	
-	public void closeConnection() throws Exception{
-		con.close();
+	public void closeConnection() {
+		try {
+			con.close();
+		} catch (Exception e) {
+
+		}
 	}
 }

@@ -14,65 +14,80 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class Customer {
-    private static JsonObjectBuilder JSONCustomer(int authcid, int isAdmin, ResultSet rs, JsonObjectBuilder customer) throws Exception{
-        Connector con = new Connector();
-        String sql;
-        ResultSet rs2;
-        int cid = rs.getInt("cid");
-        Boolean trusted = false, beTrusted = false;
+    private static JsonObjectBuilder JSONCustomer(int authcid, int isAdmin, ResultSet rs, JsonObjectBuilder customer) throws Exception {
+        Connector con = null;
 
-        sql = "SELECT trust FROM TrustRecords WHERE cid1 = " + cid + " AND cid2 = " + authcid;
-        rs2 = con.stmt.executeQuery(sql);
-        if(rs2.next()) {
-            beTrusted = rs2.getBoolean("trust");
-        }
+        try {
+            con = new Connector();
+            String sql;
+            ResultSet rs2;
+            int cid = rs.getInt("cid");
+            Boolean trusted = false, beTrusted = false;
 
-        customer.add("id", cid);
-        customer.add("username", rs.getString("username"));
-
-        if(authcid == cid || isAdmin == 1 || beTrusted) {
-            customer.add("name", rs.getString("name"));
-            String email = rs.getString("email");
-            customer.add("email", email == null ? "" : email);
-            String phone = rs.getString("phone");
-            customer.add("phone", phone == null ? "" : phone);
-
-            sql = "SELECT orderid FROM Orders WHERE cid = " + cid + " ORDER BY time DESC";
+            sql = "SELECT trust FROM TrustRecords WHERE cid1 = " + cid + " AND cid2 = " + authcid;
             rs2 = con.stmt.executeQuery(sql);
-
-            JsonArrayBuilder orders = Json.createArrayBuilder();
-            while (rs2.next()) {
-                orders.add(rs2.getInt("orderid"));
+            if (rs2.next()) {
+                beTrusted = rs2.getBoolean("trust");
             }
 
-            customer.add("orders", orders);
+            customer.add("id", cid);
+            customer.add("username", rs.getString("username"));
+
+            if (authcid == cid || isAdmin == 1 || beTrusted) {
+                customer.add("name", rs.getString("name"));
+                String email = rs.getString("email");
+                customer.add("email", email == null ? "" : email);
+                String phone = rs.getString("phone");
+                customer.add("phone", phone == null ? "" : phone);
+
+                sql = "SELECT orderid FROM Orders WHERE cid = " + cid + " ORDER BY time DESC";
+                rs2 = con.stmt.executeQuery(sql);
+
+                JsonArrayBuilder orders = Json.createArrayBuilder();
+                while (rs2.next()) {
+                    orders.add(rs2.getInt("orderid"));
+                }
+
+                customer.add("orders", orders);
+            }
+
+            sql = "SELECT trust FROM TrustRecords WHERE cid1 = " + authcid + " AND cid2 = " + cid;
+            rs2 = con.stmt.executeQuery(sql);
+            if (rs2.next()) {
+                trusted = rs2.getBoolean("trust");
+                customer.add("trusted", trusted);
+            }
+
+            customer.add("admin", rs.getBoolean("admin"));
+
+            if (con != null) con.closeConnection();
+            return customer;
+        } catch (Exception e) {
+            if(con!=null) con.closeConnection();
+            throw new Exception();
         }
-
-        sql = "SELECT trust FROM TrustRecords WHERE cid1 = " + authcid + " AND cid2 = " + cid;
-        rs2 = con.stmt.executeQuery(sql);
-        if(rs2.next()){
-            trusted = rs2.getBoolean("trust");
-            customer.add("trusted", trusted);
-        }
-
-        customer.add("admin", rs.getBoolean("admin"));
-
-        return customer;
     }
 
-    private static JsonObjectBuilder JSONCustomer(int authcid, int isAdmin, int cid, JsonObjectBuilder customer) throws Exception{
-        Connector con = new Connector();
-        String sql = "SELECT * from Customer where cid = '" + cid + "'";
-        ResultSet rs = con.stmt.executeQuery(sql);
-        rs.next();
-        return JSONCustomer(authcid, isAdmin, rs, customer);
+    private static JsonObjectBuilder JSONCustomer(int authcid, int isAdmin, int cid, JsonObjectBuilder customer) throws Exception {
+        Connector con = null;
+        try {
+            con = new Connector();
+
+            String sql = "SELECT * from Customer where cid = '" + cid + "'";
+            ResultSet rs = con.stmt.executeQuery(sql);
+            rs.next();
+            if (con != null) con.closeConnection();
+            return JSONCustomer(authcid, isAdmin, rs, customer);
+        } catch(Exception e) {
+            if(con!=null) con.closeConnection();
+            throw new Exception();
+        }
     }
 
 
     public static String details(int authcid, int isAdmin, final int cid) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonObjectBuilder customer = Json.createObjectBuilder();
-
 
         try {
             customer = JSONCustomer(authcid, isAdmin, cid, customer);
@@ -91,17 +106,17 @@ public class Customer {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonArrayBuilder customers = Json.createArrayBuilder();
         JsonObjectBuilder scores = Json.createObjectBuilder();
-
+        Connector con = null;
         try {
             String sql = "SELECT *, " +
                     "(SELECT COUNT(*) FROM TrustRecords T1 WHERE T1.cid2 = C.cid AND T1.trust = 1) - (SELECT COUNT(*) FROM TrustRecords T2 WHERE T2.cid2 = C.cid AND T2.trust = 0) AS score " +
                     "FROM Customer C ORDER BY " + "score DESC" +
                     " LIMIT " + limit + " OFFSET " + offset;
             //System.err.println(sql);
-            Connector con = new Connector();
+            con = new Connector();
             ResultSet rs = con.stmt.executeQuery(sql);
 
-            while(rs.next()) {
+            while (rs.next()) {
                 final int cid = rs.getInt("C.cid"), score = rs.getInt("score");
 
                 JsonObjectBuilder customer = Json.createObjectBuilder();
@@ -121,11 +136,11 @@ public class Customer {
 
             result.add("meta", meta);
             result.add("customers", customers).add("scores", scores);
-            return result.build().toString();
-        } catch(Exception e) {
+            if(con!=null) con.closeConnection(); return result.build().toString();
+        } catch (Exception e) {
             System.out.println("Failed to query most trusted customers");
             System.out.println(e.getMessage());
-            return null;
+            if(con!=null) con.closeConnection(); return null;
         }
     }
 
@@ -133,17 +148,17 @@ public class Customer {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonArrayBuilder customers = Json.createArrayBuilder();
         JsonObjectBuilder ratings = Json.createObjectBuilder();
-
+        Connector con = null;
         try {
             String sql = "SELECT *, (SELECT AVG(rating) FROM Usefulness U, Feedback F WHERE U.fid = F.fid AND F.cid = C.cid) AS avgRating" +
                     " FROM Customer C ORDER BY avgRating DESC " +
                     " LIMIT " + limit + " OFFSET " + offset;
 
             //System.err.println(sql);
-            Connector con = new Connector();
+            con = new Connector();
             ResultSet rs = con.stmt.executeQuery(sql);
 
-            while(rs.next()) {
+            while (rs.next()) {
                 final int cid = rs.getInt("cid");
                 final double rating = rs.getDouble("avgRating");
 
@@ -164,24 +179,24 @@ public class Customer {
 
             result.add("meta", meta);
             result.add("customers", customers).add("ratings", ratings);
-            return result.build().toString();
-        } catch(Exception e) {
+            if(con!=null) con.closeConnection(); return result.build().toString();
+        } catch (Exception e) {
             System.out.println("Failed to query most useful customers");
             System.out.println(e.getMessage());
-            return null;
+            if(con!=null) con.closeConnection(); return null;
         }
     }
 
     public static String trust(int authcid, int isAdmin, int cid, JsonObject payload) {
         JsonObject customer = payload.getJsonObject("customer");
         Boolean trusted = customer.getBoolean("trusted");
-
+        Connector con = null;
         try {
             String sql = "INSERT INTO TrustRecords (cid1, cid2, trust) VALUES (";
             sql += authcid + "," + cid + "," + trusted + ")";
             sql += " ON DUPLICATE KEY UPDATE trust=VALUES(trust)";
 
-            Connector con = new Connector();
+            con = new Connector();
 
             con.stmt.execute(sql);
 
@@ -189,35 +204,36 @@ public class Customer {
             newCustomer = JSONCustomer(authcid, isAdmin, cid, newCustomer);
             JsonObjectBuilder result = Json.createObjectBuilder();
             result.add("customer", newCustomer);
-            return result.build().toString();
+            if(con!=null) con.closeConnection(); return result.build().toString();
 
         } catch (Exception e) {
             System.out.println("Failed to insert");
             System.err.println(e.getMessage());
-            return null;
+            if(con!=null) con.closeConnection(); return null;
         }
     }
 
     public static String whoAmI(int sessionCid, int isAdmin, String ip) {
+        Connector con = null;
         try {
             String sql = "INSERT INTO History(time, ip, cid) VALUES( NOW(), '" + ip + "', " + sessionCid + ")";
-            Connector con = new Connector();
+            con = new Connector();
             con.stmt.execute(sql);
         } catch (Exception e) {
-            return null;
+            if(con!=null) con.closeConnection(); return null;
         }
 
-        if(sessionCid < 0) {
-            return null;
+        if (sessionCid < 0) {
+            if(con!=null) con.closeConnection(); return null;
         } else {
             try {
                 JsonObjectBuilder customer = Json.createObjectBuilder();
                 customer = JSONCustomer(sessionCid, isAdmin, sessionCid, customer);
                 JsonObjectBuilder result = Json.createObjectBuilder();
                 result.add("customer", customer);
-                return result.build().toString();
-            } catch(Exception e) {
-                return null;
+                if(con!=null) con.closeConnection(); return result.build().toString();
+            } catch (Exception e) {
+                if(con!=null) con.closeConnection(); return null;
             }
         }
     }
@@ -228,9 +244,9 @@ public class Customer {
         String password = info.getString("password");
         JsonObjectBuilder customer = Json.createObjectBuilder();
 //        JsonObjectBuilder result = Json.createObjectBuilder();
-
+        Connector con = null;
         try {
-            Connector con = new Connector();
+            con = new Connector();
 
             String sql = "SELECT * FROM Customer WHERE";
             sql += " username = \"" + username + "\"";
@@ -238,22 +254,22 @@ public class Customer {
 
             ResultSet rs = con.stmt.executeQuery(sql);
 
-            if(rs.next()) {
+            if (rs.next()) {
                 int cid = rs.getInt("cid");
                 int isAdmin = rs.getInt("admin");
                 JSONCustomer(cid, isAdmin, cid, customer);
                 result.add("customer", customer);
                 System.out.println("" + rs.getInt("admin") + "/" + cid);
-                return "" + rs.getInt("admin") + "/" + cid;
+                if(con!=null) con.closeConnection(); return "" + rs.getInt("admin") + "/" + cid;
             } else {
-                return "0/-1";
+                if(con!=null) con.closeConnection(); return "0/-1";
             }
 
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.out.println("Failed to validate");
             System.err.println(e.getMessage());
 
-            return "0/-1";
+            if(con!=null) con.closeConnection(); return "0/-1";
         }
     }
 
@@ -265,16 +281,18 @@ public class Customer {
         String email = info.getString("email");
         String phone = info.getString("phone");
         JsonObjectBuilder customer = Json.createObjectBuilder();
-
+        Connector con = null;
         try {
-            Connector con = new Connector();
+            con = new Connector();
 
             String sql = "INSERT INTO Customer (username, password, name, email, phone) VALUES (";
             sql += "\"" + username + "\",";
             sql += "SHA1(\"" + password + "\")" + ",";
             sql += "\"" + name + "\",";
-            if(email.length() == 0) sql += "NULL,"; else sql += "\"" + email + "\",";
-            if(phone.length() == 0) sql += "NULL"; else sql += "\"" + phone + "\"";
+            if (email.length() == 0) sql += "NULL,";
+            else sql += "\"" + email + "\",";
+            if (phone.length() == 0) sql += "NULL";
+            else sql += "\"" + phone + "\"";
             sql += ")";
 
             con.stmt.executeUpdate(sql);
@@ -289,11 +307,11 @@ public class Customer {
             customer = JSONCustomer(cid, 0, cid, customer);
             result.add("customer", customer);
 
-            return cid;
-        } catch(Exception e) {
+            if(con!=null) con.closeConnection(); return cid;
+        } catch (Exception e) {
             System.out.println("Failed to signup");
             System.err.println(e.getMessage());
-            return -1;
+            if(con!=null) con.closeConnection(); return -1;
         }
     }
 
@@ -303,441 +321,26 @@ public class Customer {
         JsonObjectBuilder visits = Json.createObjectBuilder();
         String st = start.split("T")[0];
         String ed = end.split("T")[0];
-
+        Connector con = null;
         try {
             String sql = "SELECT COUNT(*) AS visits, DATE_FORMAT(H.time, '%Y-%m-%d') AS day FROM History H " +
                     " WHERE " + "H.time >= '" + st + "' AND H.time <= '" + ed + "'" +
                     " GROUP BY day ORDER BY day ASC";
 
 //            System.out.println(sql);
-            Connector con = new Connector();
+            con = new Connector();
             ResultSet rs = con.stmt.executeQuery(sql);
 
-            while(rs.next()) {
+            while (rs.next()) {
                 visits.add(rs.getString("day"), rs.getInt("visits"));
             }
 
         } catch (Exception e) {
             System.out.println("Failed to get amount of visits");
             System.err.println(e.getMessage());
-            return null;
+            if(con!=null) con.closeConnection(); return null;
         }
 
-        return result.add("visits", visits).build().toString();
+        if(con!=null) con.closeConnection(); return result.add("visits", visits).build().toString();
     }
-
-    ////////////////////////////////////////////
-    public static ArrayList<String> mainMenuDescs() {
-        ArrayList<String> descs = new ArrayList<String>();
-        descs.add("For customer");
-        return descs;
-    }
-
-    public static void mainMenu() {
-        ArrayList<MenuItem> menuItems = new ArrayList<MenuItem>();
-        menuItems.add(new MenuItem() {
-            public ArrayList<String> getDescs() { return loginMenuDescs(); }
-            public void run() { loginMenu(); }
-        });
-        menuItems.add(new MenuItem() {
-            public ArrayList<String> getDescs() { return signupMenuDescs(); }
-            public void run() { signupMenu(); }
-        });
-
-        int[] maxSize = {30};
-        MenuDisplay menuDisplay = new MenuDisplay();
-        menuDisplay.chooseAndRun(menuItems, null, maxSize, null, true);
-    }
-
-    public static ArrayList<String> loginMenuDescs() {
-        ArrayList<String> descs = new ArrayList<String>();
-        descs.add("Login");
-        return descs;
-    }
-
-    public static void loginMenu() {
-        //System.out.println("loginMenu");
-        Connector con = Bookstore.con;
-        try {
-            con.newStatement();
-        } catch(Exception e) {
-            return ;
-        }
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-
-        try {
-            String username, password;
-
-            do { System.out.print("Please enter your username : "); }
-            while ((username = in.readLine()) == null || username.length() == 0) ;
-            do { System.out.print("Please enter your password : "); }
-            while ((password = Utility.readPassword()) == null || password.length() == 0) ;
-
-            String sql = "SELECT cid FROM Customer WHERE";
-            sql += " username = \"" + username + "\"";
-            sql += " AND password = SHA1(\"" + password + "\")";
-            //System.out.println(sql);
-
-            ResultSet rs = con.stmt.executeQuery(sql);
-            ResultSetMetaData rsmd = rs.getMetaData();
-
-            if(rs.next()) {
-                int cid;
-                cid = rs.getInt(1);
-
-                System.out.println("Logged in!");
-                userhomeMenu(cid);
-            } else
-                System.out.println("Failed");
-
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static ArrayList<String> signupMenuDescs() {
-        ArrayList<String> descs = new ArrayList<String>();
-        descs.add("Sign Up");
-        return descs;
-    }
-
-    public static void signupMenu() {
-        Connector con = Bookstore.con;
-        try {
-            con.newStatement();
-        } catch(Exception e) {
-            return ;
-        }
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-
-        try {
-            String username, password, name, email, phone, confirmPassword;
-
-            do { System.out.print("Please enter your username : "); }
-            while ((username = in.readLine()) == null || username.length() == 0) ;
-            do { System.out.print("Please enter your password : "); }
-            while ((password = Utility.readPassword()) == null || password.length() == 0) ;
-            do { System.out.print("Please confirm your password : "); }
-            while ((confirmPassword = Utility.readPassword()) == null || confirmPassword.length() == 0) ;
-            if(!password.equals(confirmPassword)) {
-                System.out.println("Two passwords are not equal");
-                return;
-            }
-
-            do { System.out.print("Please enter your name : "); }
-            while ((name = in.readLine()) == null || name.length() == 0) ;
-            System.out.print("Please enter your email : ");
-            email = in.readLine();
-            System.out.print("Please enter your phone : ");
-            phone = in.readLine();
-
-            String sql = "INSERT INTO Customer (username, password, name, email, phone) VALUES (";
-            sql += "\"" + username + "\",";
-            sql += "SHA1(\"" + password + "\")" + ",";
-            sql += "\"" + name + "\",";
-            if(email.length() == 0) sql += "NULL,"; else sql += "\"" + email + "\",";
-            if(phone.length() == 0) sql += "NULL"; else sql += "\"" + phone + "\"";
-            sql += ")";
-            //System.out.println(sql);
-
-            try {
-                int status = con.stmt.executeUpdate(sql);
-                System.out.println("Registered");
-
-                sql = "SELECT cid FROM Customer WHERE username = \"" + username + "\"";
-                //System.err.println(sql);
-
-                ResultSet rs = con.stmt.executeQuery(sql);
-                ResultSetMetaData rsmd = rs.getMetaData();
-
-                rs.next();
-                int cid = rs.getInt(1);
-
-                userhomeMenu(cid);
-            } catch (Exception e) {
-                System.out.println("Failed to find the user who registered just now");
-                System.err.println(e.getMessage());
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static ArrayList<String> declareUserDescs() {
-        ArrayList<String> descs = new ArrayList<String>();
-        descs.add("Declare other users as 'trusted' or 'not-trusted'");
-        return descs;
-    }
-
-    public static void declareUser(int cid) {
-        int dcid = -1;
-        boolean trust;
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-
-        try {
-            System.out.println("Please enter cid : ");
-            dcid = Integer.parseInt(in.readLine());
-            System.out.println("Please enter trusted(true) or not-trusted(false) : ");
-            trust = Boolean.parseBoolean(in.readLine());
-        } catch (Exception e) {
-            System.out.println("Failed to read");
-            System.err.println(e.getMessage());
-            return;
-        }
-
-        if (dcid == cid) {
-            System.out.println("Youself are always trusted!");
-            return;
-        }
-
-        try {
-            String sql = "INSERT INTO TrustRecords (cid1, cid2, trust) VALUES (";
-            sql += cid + "," + dcid + "," + trust + ")";
-
-            Connector con = Bookstore.con;
-            try {
-                con.newStatement();
-            } catch(Exception e) {
-                return ;
-            }
-            con.stmt.execute(sql);
-            System.out.println("Successfully");
-        } catch (Exception e) {
-            System.out.println("Failed to insert");
-            System.err.println(e.getMessage());
-            return;
-        }
-    }
-
-    public static ArrayList<String> userhomeMenuDescs() {
-        return null;
-    }
-
-    public static void userhomeMenu(final int cid) {
-        ArrayList<MenuItem> menuItems = new ArrayList<MenuItem>();
-
-        menuItems.add(new MenuItem() {
-            public ArrayList<String> getDescs() { return Book.simpleSearchMenuDescs(); }
-            public void run() { Book.simpleSearchMenu(cid); }
-        });
-        menuItems.add(new MenuItem() {
-            @Override
-            public ArrayList<String> getDescs() { return Book.advancedSearchDescs();
-            }
-
-            @Override
-            public void run() {
-                Book.advancedSearch(cid);
-            }
-        });
-        menuItems.add(new MenuItem() {
-            @Override
-            public ArrayList<String> getDescs() { return Feedback.recordMenuDescs();
-            }
-
-            @Override
-            public void run() {
-                Feedback.recordMenu(cid);
-            }
-        });
-        menuItems.add(new MenuItem() {
-            @Override
-            public ArrayList<String> getDescs() { return Feedback.assessFeedbackDescs();
-            }
-
-            @Override
-            public void run() {
-                Feedback.assessFeedback(cid);
-            }
-        });
-        menuItems.add(new MenuItem() {
-            @Override
-            public ArrayList<String> getDescs() { return Customer.declareUserDescs();
-            }
-
-            @Override
-            public void run() {
-                Customer.declareUser(cid);
-            }
-        });
-        menuItems.add(new MenuItem() {
-            @Override
-            public ArrayList<String> getDescs() { return Feedback.showFeedbacksMenuDescs();
-            }
-
-            @Override
-            public void run() {
-                Feedback.showFeedbacksMenu(cid);
-            }
-        });
-        menuItems.add(new MenuItem() {
-            @Override
-            public ArrayList<String> getDescs() { return Order.showAllOrdersDescs();
-            }
-
-            @Override
-            public void run() {
-                Order.showAllOrder(cid);
-            }
-        });
-        menuItems.add(new MenuItem() {
-            @Override
-            public ArrayList<String> getDescs() { return Order.showCartDescs();
-            }
-
-            @Override
-            public void run() {
-                Order.showCart(cid);
-            }
-        });
-        menuItems.add(new MenuItem() {
-            @Override
-            public ArrayList<String> getDescs() { return Order.confirmOrderDescs();
-            }
-
-            @Override
-            public void run() {
-                Order.confirmOrder(cid);
-            }
-
-        });
-
-        int[] maxSizes = {50};
-        MenuDisplay display = new MenuDisplay();
-        display.chooseAndRun(menuItems, null, maxSizes, null, true);
-    }
-
-    public static ArrayList<String> trustedUsersDescs() {
-        ArrayList<String> descs = new ArrayList<String>();
-        descs.add("Print the top m most 'trusted' users");
-        return descs;
-    }
-
-    public static void trustedUsers() {
-        int m;
-
-        try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-
-            System.out.println("Please enter the amount of the most popular authors you want to see");
-            m = Integer.parseInt(in.readLine());
-        } catch(Exception e) {
-            System.out.println("Failed to read");
-            System.err.println(e.getMessage());
-            return;
-        }
-
-        try {
-            String sql = "SELECT *, " +
-                    "(SELECT COUNT(*) FROM TrustRecords T1 WHERE T1.cid2 = C.cid AND T1.trust = 1) - (SELECT COUNT(*) FROM TrustRecords T2 WHERE T2.cid2 = C.cid AND T2.trust = 0) AS score " +
-                    "FROM Customer C ORDER BY " +
-                    "score DESC";
-            //System.err.println(sql);
-            Connector con = Bookstore.con;
-            try {
-                con.newStatement();
-            } catch(Exception e) {
-                return ;
-            }
-            ResultSet rs = con.stmt.executeQuery(sql);
-
-            ArrayList<MenuItem> menuItems = new ArrayList<MenuItem>();
-
-            while(rs.next() && m-- > 0) {
-                final int cid = rs.getInt("C.cid"), score = rs.getInt("score");
-                menuItems.add(new MenuItem() {
-                    @Override
-                    public ArrayList<String> getDescs() {
-                        ArrayList<String> descs = new ArrayList<String>();
-                        descs.add("" + cid);
-                        descs.add("" + score);
-                        return descs;
-                    }
-
-                    @Override
-                    public void run() {
-                        System.err.println("TBD: SHOW CUSTOMER'S DETAILS");
-                    }
-                });
-            }
-
-            String[] headers = {"Customer id", "Trust score"};
-            int[] maxSizes = {30, 30};
-
-            MenuDisplay.chooseAndRun(menuItems, headers, maxSizes, null, true);
-
-        } catch(Exception e) {
-            System.out.println("Failed to query");
-            System.out.println(e.getMessage());
-            return;
-        }
-    }
-
-    public static ArrayList<String> usefulUsersDescs() {
-        ArrayList<String> descs = new ArrayList<String>();
-        descs.add("Print the top m most 'useful' users");
-        return descs;
-    }
-
-    public static void usefulUsers() {
-        int m;
-
-        try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-
-            System.out.println("Please enter the amount of the most popular authors you want to see");
-            m = Integer.parseInt(in.readLine());
-        } catch(Exception e) {
-            System.out.println("Failed to read");
-            System.err.println(e.getMessage());
-            return;
-        }
-
-        try {
-            String sql = "SELECT cid, AVG(rating) AS avgRating FROM Usefulness U GROUP BY U.cid ORDER BY avgRating DESC";
-            //System.err.println(sql);
-            Connector con = Bookstore.con;
-            try {
-                con.newStatement();
-            } catch(Exception e) {
-                return ;
-            }
-            ResultSet rs = con.stmt.executeQuery(sql);
-
-            ArrayList<MenuItem> menuItems = new ArrayList<MenuItem>();
-
-            while(rs.next() && m-- > 0) {
-                final int cid = rs.getInt("cid");
-                final String avg = rs.getString("avgRating");
-
-                menuItems.add(new MenuItem() {
-                    @Override
-                    public ArrayList<String> getDescs() {
-                        ArrayList<String> descs = new ArrayList<String>();
-                        descs.add("" + cid);
-                        descs.add("" + avg);
-                        return descs;
-                    }
-
-                    @Override
-                    public void run() {
-                        System.err.println("TBD: SHOW CUSTOMER DETAILS");
-                    }
-                });
-
-                System.out.format("Customer id: %d  Average usefulness: %f\n", rs.getInt("cid"), rs.getFloat("avgRating"));
-            }
-
-            String[] headers = {"Customer's id", "Average usefulnes"};
-            int[] maxSizes = {30, 30};
-            MenuDisplay.chooseAndRun(menuItems, headers, maxSizes, null, true);
-
-        } catch(Exception e) {
-            System.out.println("Failed to query");
-            System.out.println(e.getMessage());
-            return;
-        }
-    }
-}
+};
