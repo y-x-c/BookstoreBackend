@@ -73,7 +73,7 @@ public class Book {
                 "O1.cid = O2.cid AND O1.orderid = I1.orderid AND O2.orderid = I2.orderid AND " +
                 "I1.isbn='" + isbn + "'" + " AND I2.isbn != '" + isbn + "'" +
                 " GROUP BY I2.isbn" +
-                " LIMIT 4 ";
+                " LIMIT 5 ";
 
         //System.err.println(sql);
 
