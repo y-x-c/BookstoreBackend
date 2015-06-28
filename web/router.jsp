@@ -25,12 +25,12 @@
     int isAdmin = session.getAttribute("isAdmin") == null ? 0 : (Integer)session.getAttribute("isAdmin");
 
     System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid") + " " + session.getAttribute("isAdmin"));
-
+    authcid = 2; isAdmin = 1;
 
         // GET /whoAmI
     if (dirs.length == 1 && dirs[0].equals("whoAmI")) {
         System.out.println("Forwarding to Customer.whoAmI()");
-        String result = Customer.whoAmI(sessionCid);
+        String result = Customer.whoAmI(authcid);
 
         if (result == null) {
             response.sendError(response.SC_NOT_FOUND);
@@ -85,7 +85,27 @@
             response.sendError(response.SC_NOT_FOUND);
             session.invalidate();
         }
+        // (ADMIN) get lastest orders
+        // GET /orders/latest
+    } else if (dirs.length == 2 && dirs[0].equals("orders") && dirs[1].equals("latest") && verb.equals("GET")) {
+        if(authcid < 0 || isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
 
+        System.err.println("Forwarding to Orders.latest()");
+
+        String _limit = request.getParameter("limit");
+        String _offset = request.getParameter("offset");
+        int limit, offset;
+        if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
+        if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
+
+        String result = Order.latest(limit, offset);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
         // get popular books
         // GET /books/popular?start=&end=&limit=&offset=
     } else if (dirs.length == 2 && dirs[0].equals("books") && dirs[1].equals("popular") && verb.equals("GET")) {
@@ -299,13 +319,10 @@
         }
 
         // username of cid
-        // (LOGINED) extra details if the customer identified by authcid is trusted by cid
+        // (AFTER LOGINED) extra details if the customer identified by authcid is trusted by cid
         // GET /customers/:cid
     } else if (dirs.length == 2 && dirs[0].equals("customers") && verb.equals("GET")) {
         System.err.println("Forwarding to Customers.details()");
-        if(authcid < 0) {
-            response.sendError(response.SC_NOT_FOUND);
-        }
 
         int cid = Integer.parseInt(dirs[1]);
 
@@ -361,7 +378,7 @@
         // GET /orders/orders?start=&end=
     } else if (dirs.length == 2 && dirs[0].equals("orders") && dirs[1].equals("orders") && verb.equals("GET")) {
         System.err.println("Forwarding to Order.orders()");
-        if(isAdmin == 0) {
+        if (isAdmin == 0) {
             response.sendError(response.SC_NOT_FOUND);
         }
 
@@ -375,6 +392,7 @@
         } else {
             out.println(result);
         }
+
 
         // (LOGINED) get order details
         // GET /orders/:orderid
@@ -552,8 +570,11 @@
         String orderBy = request.getParameter("orderBy");
         String all = request.getParameter("all");
         String advanced = request.getParameter("advanced");
+        String popular = request.getParameter("popular");
         String _limit = request.getParameter("limit");
         String _offset = request.getParameter("offset");
+        String start = request.getParameter("start");
+        String end = request.getParameter("end");
         int limit, offset;
         if(_limit == null) limit = 5; else limit = Integer.parseInt(_limit);
         if(_offset == null) offset = 0; else offset = Integer.parseInt(_offset);
@@ -562,12 +583,15 @@
         if(all != null && all.length() > 0) {
             System.err.println("Forwarding to Books.simpleSearch()");
             result = Book.simpleSearch(sessionCid, limit, offset, all, orderBy);
-        } else {
+        } else if(advanced != null && advanced.length() > 0) {
             System.err.println("Forwarding to Books.advancedSearch()");
             InputStream stream = new ByteArrayInputStream(advanced.getBytes(StandardCharsets.UTF_8));
             JsonReader jsonReader = Json.createReader(stream);
             JsonArray conditions = jsonReader.readArray();
             result = Book.advancedSearch(sessionCid, limit, offset, conditions, orderBy);
+        } else {
+            System.err.println("Forwarding to Books.popular()");
+            result = Book.popular(limit, offset, start, end);
         }
 
         if (result == null) {

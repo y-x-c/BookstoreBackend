@@ -68,6 +68,25 @@ public class Book {
 
         book.add("feedbacks", feedbacks);
 
+
+        sql = "SELECT I2.isbn, SUM(I2.amount) FROM ItemInOrder I1, ItemInOrder I2, Orders O1, Orders O2 WHERE " +
+                "O1.cid = O2.cid AND O1.orderid = I1.orderid AND O2.orderid = I2.orderid AND " +
+                "I1.isbn='" + isbn + "'" + " AND I2.isbn != '" + isbn + "'" +
+                " GROUP BY I2.isbn" +
+                " LIMIT 4 ";
+
+        //System.err.println(sql);
+
+        Connector con = new Connector();
+        rs2 = con.stmt.executeQuery(sql);
+
+        JsonArrayBuilder suggestions = Json.createArrayBuilder();
+        while(rs2.next()) {
+            suggestions.add(rs2.getString("I2.isbn"));
+        }
+
+        book.add("suggestions", suggestions);
+
         return book;
     }
 
@@ -117,29 +136,6 @@ public class Book {
             System.err.println("Failed to add details of this book into result");
             System.err.println(e);
 
-            return null;
-        }
-
-        try {
-            sql = "SELECT I2.isbn, SUM(I2.amount) FROM ItemInOrder I1, ItemInOrder I2, Orders O1, Orders O2 WHERE " +
-                    "O1.cid = O2.cid AND O1.orderid = I1.orderid AND O2.orderid = I2.orderid AND " +
-                    "I1.isbn='" + isbn + "'" + " AND I2.isbn != '" + isbn + "'" +
-                    " GROUP BY I2.isbn" +
-                    " LIMIT 4 ";
-
-            //System.err.println(sql);
-
-            rs = con.stmt.executeQuery(sql);
-
-            JsonArrayBuilder suggestions = Json.createArrayBuilder();
-            while(rs.next()) {
-                suggestions.add(rs.getString("I2.isbn"));
-            }
-
-            book.add("suggestions", suggestions);
-        } catch(Exception e) {
-            System.out.println("Failed to query");
-            System.err.println(e.getMessage());
             return null;
         }
 

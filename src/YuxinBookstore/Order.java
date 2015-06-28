@@ -145,6 +145,39 @@ public class Order {
         return result.add("orders", orders).build().toString();
     }
 
+    public static String latest(int limit, int offset) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonArrayBuilder orders = Json.createArrayBuilder();
+
+        try {
+            String sql = "SELECT * FROM Orders O " +
+                    " ORDER BY time DESC" +
+                    " LIMIT " + limit + " OFFSET " + offset;
+
+//            System.out.println(sql);
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                JsonObjectBuilder order = Json.createObjectBuilder();
+                orders.add(JSONOrder(rs, order));
+            }
+
+            sql = "SELECT COUNT(*) AS total FROM Orders O";
+            rs = con.stmt.executeQuery(sql);
+            rs.next();
+            JsonObjectBuilder meta = Json.createObjectBuilder();
+            meta.add("total", rs.getInt("total"));
+            result.add("meta", meta);
+
+            return result.add("orders", orders).build().toString();
+        } catch (Exception e) {
+            System.out.println("Failed to get amount of orders");
+            System.err.println(e.getMessage());
+            return null;
+        }
+    }
+
     public static String add(final int sessionCid, JsonObject payload) {
 
         JsonObjectBuilder result = Json.createObjectBuilder();
