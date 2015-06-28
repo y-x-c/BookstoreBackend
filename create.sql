@@ -246,6 +246,14 @@ INSERT INTO Cart (cid, isbn, amount) VALUES (4, "9787544270878", 2);
 INSERT INTO Cart (cid, isbn, amount) VALUES (3, "9787544270878", 5);
 INSERT INTO Cart (cid, isbn, amount) VALUES (3, "9787508649719", 2);
 
+CREATE TABLE History(
+    id INT NOT NULL AUTO_INCREMENT,
+    time DATETIME NOT NULL,
+    ip VARCHAR(40) NOT NULL,
+    cid INT NOT NULL DEFAULT -1,
+    PRIMARY KEY (id)
+) CHARACTER SET utf8;
+
 -- CREATE TABLE RatingOfPublisher(
 --     pid INT NOT NULL,
 --     cid INT NOT NULL,

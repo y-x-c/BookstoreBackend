@@ -30,10 +30,10 @@
         // GET /whoAmI
     if (dirs.length == 1 && dirs[0].equals("whoAmI")) {
         System.out.println("Forwarding to Customer.whoAmI()");
-        String result = Customer.whoAmI(authcid);
+        String result = Customer.whoAmI(authcid, request.getRemoteAddr());
 
         if (result == null) {
-            response.sendError(response.SC_NOT_FOUND);
+            response.sendError(response.SC_NOT_FOUND, (String)request.getRemoteAddr());
         } else {
             out.println(result);
         }
@@ -85,6 +85,27 @@
             response.sendError(response.SC_NOT_FOUND);
             session.invalidate();
         }
+
+        // (ADMIN) get sales data from 'start' to 'end'
+        // 'span' has not supported yet
+        // GET /customers/visits?start=&end=
+    } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("visits") && verb.equals("GET")) {
+        System.err.println("Forwarding to Customer.visits()");
+        if (isAdmin == 0) {
+            response.sendError(response.SC_NOT_FOUND);
+        }
+
+        String start = request.getParameter("start");
+        String end = request.getParameter("end");
+        String span = request.getParameter("span");
+
+        String result = Customer.visits(start, end, span);
+        if (result == null) {
+            response.sendError(response.SC_NOT_FOUND);
+        } else {
+            out.println(result);
+        }
+
         // (ADMIN) get lastest orders
         // GET /orders/latest
     } else if (dirs.length == 2 && dirs[0].equals("orders") && dirs[1].equals("latest") && verb.equals("GET")) {
@@ -371,7 +392,6 @@
         } else {
             out.println(result);
         }
-
 
         // (ADMIN) get sales data from 'start' to 'end'
         // 'span' has not supported yet

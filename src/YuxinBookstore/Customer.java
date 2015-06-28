@@ -198,7 +198,15 @@ public class Customer {
         }
     }
 
-    public static String whoAmI(int sessionCid) {
+    public static String whoAmI(int sessionCid, String ip) {
+        try {
+            String sql = "INSERT INTO History(time, ip, cid) VALUES( NOW(), '" + ip + "', " + sessionCid + ")";
+            Connector con = new Connector();
+            con.stmt.execute(sql);
+        } catch (Exception e) {
+            return null;
+        }
+
         if(sessionCid < 0) {
             return null;
         } else {
@@ -286,6 +294,35 @@ public class Customer {
             System.err.println(e.getMessage());
             return -1;
         }
+    }
+
+
+    public static String visits(String start, String end, String span) {
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        JsonObjectBuilder visits = Json.createObjectBuilder();
+        String st = start.split("T")[0];
+        String ed = end.split("T")[0];
+
+        try {
+            String sql = "SELECT COUNT(*) AS visits, DATE_FORMAT(H.time, '%Y-%m-%d') AS day FROM History H " +
+                    " WHERE " + "H.time >= '" + st + "' AND H.time <= '" + ed + "'" +
+                    " GROUP BY day ORDER BY day ASC";
+
+//            System.out.println(sql);
+            Connector con = new Connector();
+            ResultSet rs = con.stmt.executeQuery(sql);
+
+            while(rs.next()) {
+                visits.add(rs.getString("day"), rs.getInt("visits"));
+            }
+
+        } catch (Exception e) {
+            System.out.println("Failed to get amount of visits");
+            System.err.println(e.getMessage());
+            return null;
+        }
+
+        return result.add("visits", visits).build().toString();
     }
 
     ////////////////////////////////////////////
