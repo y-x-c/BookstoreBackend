@@ -105,8 +105,9 @@ public class Book {
             String sql = "SELECT * from Book where isbn = '" + ISBN + "'";
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
+            book = JSONBook(rs, book);
             if (con != null) con.closeConnection();
-            return JSONBook(rs, book);
+            return book;
         } catch(Exception e) {
             if(con!=null) con.closeConnection();
             throw new Exception();
@@ -156,7 +157,8 @@ public class Book {
 
         result.add("book", book);
 
-        if(con!=null) con.closeConnection(); return result.build().toString();
+        if(con!=null) con.closeConnection();
+        return result.build().toString();
     }
 
     public static String add(JsonObject payload) {
@@ -217,7 +219,8 @@ public class Book {
         }
 
         result.add("book", newBook);
-        if(con!=null) con.closeConnection(); return result.build().toString();
+        if(con!=null) con.closeConnection();
+        return result.build().toString();
     }
 
     public static String simpleSearch(int cid, int limit, int offset, String all, String _orderBy) {
@@ -290,7 +293,8 @@ public class Book {
             result.add("meta", meta);
 
             result.add("books", books);
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Simple search failed");
             System.err.println(e.getMessage());
@@ -378,7 +382,8 @@ public class Book {
             result.add("meta", meta);
 
             result.add("books", books);
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to build conditions");
             System.err.println(e.getMessage());
@@ -423,7 +428,8 @@ public class Book {
 
             result.add("books", books);
             result.add("sales", sales);
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to query popular books");
             System.err.println(e.getMessage());

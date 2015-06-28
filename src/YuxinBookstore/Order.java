@@ -49,8 +49,9 @@ public class Order {
             con = new Connector();
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
+            order = JSONOrder(rs, order);
             if (con != null) con.closeConnection();
-            return JSONOrder(rs, order);
+            return order;
         } catch (Exception e) {
             if(con!=null) con.closeConnection();
             throw new Exception();
@@ -96,7 +97,8 @@ public class Order {
             System.err.println("Cannot connect to the database.");
             System.err.println(e.getMessage());
 
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
 
         JsonObjectBuilder order = Json.createObjectBuilder();
@@ -111,7 +113,8 @@ public class Order {
             rs.next();
 
             if (isAdmin == 0 && rs.getInt("cid") != authcid) {
-                if(con!=null) con.closeConnection(); return null;
+                if(con!=null) con.closeConnection();
+                return null;
             }
 
             order = JSONOrder(rs, order);
@@ -119,7 +122,8 @@ public class Order {
             System.out.println("Failed to added details");
             System.err.println(e.getMessage());
 
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
 
         JsonArrayBuilder items = Json.createArrayBuilder();
@@ -130,12 +134,14 @@ public class Order {
             System.out.println("Failed to added order items");
             System.err.println(e.getMessage());
 
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
 
         result.add("order", order);
         result.add("orderItems", items);
-        if(con!=null) con.closeConnection(); return result.build().toString();
+        if(con!=null) con.closeConnection();
+        return result.build().toString();
     }
 
     public static String orders(String start, String end, String span) {
@@ -161,10 +167,12 @@ public class Order {
         } catch (Exception e) {
             System.out.println("Failed to get amount of orders");
             System.err.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
 
-        if(con!=null) con.closeConnection(); return result.add("orders", orders).build().toString();
+        if(con!=null) con.closeConnection();
+        return result.add("orders", orders).build().toString();
     }
 
     public static String latest(int limit, int offset) {
@@ -192,11 +200,13 @@ public class Order {
             meta.add("total", rs.getInt("total"));
             result.add("meta", meta);
 
-            if(con!=null) con.closeConnection(); return result.add("orders", orders).build().toString();
+            if(con!=null) con.closeConnection();
+            return result.add("orders", orders).build().toString();
         } catch (Exception e) {
             System.out.println("Failed to get amount of orders");
             System.err.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 
@@ -215,7 +225,8 @@ public class Order {
         try {
             con = new Connector();
         } catch (Exception e) {
-            if(con!=null) con.closeConnection(); if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
 
         try {
@@ -228,7 +239,8 @@ public class Order {
             if (rs.next()) {
                 System.out.print("No enough books ");
                 System.out.println(rs.getString("title"));
-                if(con!=null) con.closeConnection(); return null;
+                if(con!=null) con.closeConnection();
+                return null;
             }
 
             // modify amount and record order
@@ -265,12 +277,14 @@ public class Order {
             result.add("order", newOrder);
             result.add("orderItems", newItems);
 
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to update");
             System.err.println(e.getMessage());
 
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
 
     }
@@ -305,11 +319,13 @@ public class Order {
             newCart.add("id", cid + "-" + isbn);
             newCart.add("customer", cid);
             result.add("cart", newCart);
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to add into shopping cart");
             System.err.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 
@@ -337,12 +353,15 @@ public class Order {
 
                 carts.add(cart);
             }
-            if(con!=null) con.closeConnection(); return result.add("carts", carts).build().toString();
+
+            if(con!=null) con.closeConnection();
+            return result.add("carts", carts).build().toString();
 
         } catch (Exception e) {
             System.out.println("Failed to query");
             System.err.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 
@@ -370,11 +389,13 @@ public class Order {
                 cart.add("amount", 0);
             }
 
-            if(con!=null) con.closeConnection(); return result.add("cart", cart).build().toString();
+            if(con!=null) con.closeConnection();
+            return result.add("cart", cart).build().toString();
         } catch (Exception e) {
             System.out.println("Failed to query");
             System.err.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 

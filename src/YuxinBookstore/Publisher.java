@@ -34,8 +34,9 @@ public class Publisher {
             String sql = "SELECT * from Publisher where pid = '" + pid + "'";
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
+            publisher = JSONPublisher(rs, publisher);
             if (con != null) con.closeConnection();
-            return JSONPublisher(rs, publisher);
+            return publisher;
         } catch(Exception e) {
             if(con!=null) con.closeConnection();
             throw new Exception();
@@ -111,7 +112,8 @@ public class Publisher {
         }
 
         result.add("publisher", publisher);
-        if(con!=null) con.closeConnection(); return result.build().toString();
+        if(con!=null) con.closeConnection();
+        return result.build().toString();
     }
 
     public static String add(JsonObject payload) {
@@ -144,7 +146,8 @@ public class Publisher {
         }
 
         result.add("publisher", newPublisher);
-        if(con!=null) con.closeConnection(); return result.build().toString();
+        if(con!=null) con.closeConnection();
+        return result.build().toString();
     }
 
     public static String find(int limit, String name) {
@@ -178,7 +181,8 @@ public class Publisher {
         }
 
         result.add("publishers", publishers);
-        if(con!=null) con.closeConnection(); return result.build().toString();
+        if(con!=null) con.closeConnection();
+        return result.build().toString();
     }
 
     public static String popular(int limit, int offset, String start, String end) {
@@ -210,7 +214,7 @@ public class Publisher {
                 sales.add(pid, _sales);
             }
 
-            sql = "SELECT COUNT(DISTINCT B.isbn) AS total FROM ItemInOrder I, Book B, Orders O " +
+            sql = "SELECT COUNT(DISTINCT B.pid) AS total FROM ItemInOrder I, Book B, Orders O " +
                     "WHERE I.isbn = B.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed + "'";
             rs = con.stmt.executeQuery(sql);
             rs.next();
@@ -219,7 +223,8 @@ public class Publisher {
             meta.add("total", rs.getInt("total"));
 
             result.add("meta", meta);
-            if(con!=null) con.closeConnection(); return result.add("publishers", publishers).add("sales", sales).build().toString();
+            if(con!=null) con.closeConnection();
+            return result.add("publishers", publishers).add("sales", sales).build().toString();
         } catch (Exception e) {
             System.out.println("Failed to query popular publishers");
             System.err.println(e.getMessage());

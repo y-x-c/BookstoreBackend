@@ -47,7 +47,9 @@ public class Feedback {
             rs = con.stmt.executeQuery(sql);
             rs.next();
 
-            if(con!=null) con.closeConnection(); return JSONFeedback(rs, feedback);
+            feedback = JSONFeedback(rs, feedback);
+            if(con!=null) con.closeConnection();
+            return feedback;
         } catch (Exception e) {
             if(con!=null) con.closeConnection();
             throw new Exception();
@@ -67,8 +69,10 @@ public class Feedback {
             con = new Connector();
             rs = con.stmt.executeQuery(sql);
             rs.next();
+
+            feedback = JSONFeedback(rs, feedback);
             if (con != null) con.closeConnection();
-            return JSONFeedback(rs, feedback);
+            return feedback;
         } catch(Exception e) {
             if(con!=null) con.closeConnection();
             throw new Exception();
@@ -98,7 +102,8 @@ public class Feedback {
             if(con!=null) con.closeConnection(); return null;
         }
 
-        if(con!=null) con.closeConnection(); return result.add("statistic", statistic).build().toString();
+        if(con!=null) con.closeConnection();
+        return result.add("statistic", statistic).build().toString();
     }
 
     public static String details(final int cid, final int fid) {
@@ -161,12 +166,14 @@ public class Feedback {
             result.add("meta", meta);
 
             result.add("feedbacks", feedbacks);
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to get feedbacks");
             System.err.println(e.getMessage());
 
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 
@@ -197,11 +204,13 @@ public class Feedback {
             newFeedback = JSONFeedback(isbn, cid, newFeedback);
             result.add("feedback", newFeedback);
 
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to record the feedback");
             System.err.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 
@@ -221,11 +230,13 @@ public class Feedback {
             newFeedback = JSONFeedback(cid, fid, newFeedback);
             result.add("feedback", newFeedback);
 
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to insert");
             System.err.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 

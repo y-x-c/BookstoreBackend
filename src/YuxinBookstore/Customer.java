@@ -76,8 +76,10 @@ public class Customer {
             String sql = "SELECT * from Customer where cid = '" + cid + "'";
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
+
+            customer = JSONCustomer(authcid, isAdmin, rs, customer);
             if (con != null) con.closeConnection();
-            return JSONCustomer(authcid, isAdmin, rs, customer);
+            return customer;
         } catch(Exception e) {
             if(con!=null) con.closeConnection();
             throw new Exception();
@@ -136,11 +138,13 @@ public class Customer {
 
             result.add("meta", meta);
             result.add("customers", customers).add("scores", scores);
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to query most trusted customers");
             System.out.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 
@@ -179,11 +183,13 @@ public class Customer {
 
             result.add("meta", meta);
             result.add("customers", customers).add("ratings", ratings);
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
         } catch (Exception e) {
             System.out.println("Failed to query most useful customers");
             System.out.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 
@@ -204,12 +210,14 @@ public class Customer {
             newCustomer = JSONCustomer(authcid, isAdmin, cid, newCustomer);
             JsonObjectBuilder result = Json.createObjectBuilder();
             result.add("customer", newCustomer);
-            if(con!=null) con.closeConnection(); return result.build().toString();
+            if(con!=null) con.closeConnection();
+            return result.build().toString();
 
         } catch (Exception e) {
             System.out.println("Failed to insert");
             System.err.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
     }
 
@@ -220,20 +228,24 @@ public class Customer {
             con = new Connector();
             con.stmt.execute(sql);
         } catch (Exception e) {
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         }
 
         if (sessionCid < 0) {
-            if(con!=null) con.closeConnection(); return null;
+            if(con!=null) con.closeConnection();
+            return null;
         } else {
             try {
                 JsonObjectBuilder customer = Json.createObjectBuilder();
                 customer = JSONCustomer(sessionCid, isAdmin, sessionCid, customer);
                 JsonObjectBuilder result = Json.createObjectBuilder();
                 result.add("customer", customer);
-                if(con!=null) con.closeConnection(); return result.build().toString();
+                if(con!=null) con.closeConnection();
+                return result.build().toString();
             } catch (Exception e) {
-                if(con!=null) con.closeConnection(); return null;
+                if(con!=null) con.closeConnection();
+                return null;
             }
         }
     }
@@ -260,16 +272,20 @@ public class Customer {
                 JSONCustomer(cid, isAdmin, cid, customer);
                 result.add("customer", customer);
                 System.out.println("" + rs.getInt("admin") + "/" + cid);
-                if(con!=null) con.closeConnection(); return "" + rs.getInt("admin") + "/" + cid;
+                String _result = "" + rs.getInt("admin") + "/" + cid;
+                if(con!=null) con.closeConnection();
+                return _result;
             } else {
-                if(con!=null) con.closeConnection(); return "0/-1";
+                if(con!=null) con.closeConnection();
+                return "0/-1";
             }
 
         } catch (Exception e) {
             System.out.println("Failed to validate");
             System.err.println(e.getMessage());
 
-            if(con!=null) con.closeConnection(); return "0/-1";
+            if(con!=null) con.closeConnection();
+            return "0/-1";
         }
     }
 
@@ -307,11 +323,13 @@ public class Customer {
             customer = JSONCustomer(cid, 0, cid, customer);
             result.add("customer", customer);
 
-            if(con!=null) con.closeConnection(); return cid;
+            if(con!=null) con.closeConnection();
+            return cid;
         } catch (Exception e) {
             System.out.println("Failed to signup");
             System.err.println(e.getMessage());
-            if(con!=null) con.closeConnection(); return -1;
+            if(con!=null) con.closeConnection();
+            return -1;
         }
     }
 
@@ -341,6 +359,7 @@ public class Customer {
             if(con!=null) con.closeConnection(); return null;
         }
 
-        if(con!=null) con.closeConnection(); return result.add("visits", visits).build().toString();
+        if(con!=null) con.closeConnection();
+        return result.add("visits", visits).build().toString();
     }
 };

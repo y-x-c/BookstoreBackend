@@ -40,7 +40,8 @@ public class Author {
             throw new Exception();
         }
 
-        if(con!=null) con.closeConnection(); return author;
+        if(con!=null) con.closeConnection();
+        return author;
     }
 
     private static JsonObjectBuilder JSONAuthor(String authid, JsonObjectBuilder author) throws Exception {
@@ -50,9 +51,9 @@ public class Author {
             String sql = "SELECT * from Author where authid = '" + authid + "'";
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
-            con.closeConnection();
+            author = JSONAuthor(rs, author);
             if (con != null) con.closeConnection();
-            return JSONAuthor(rs, author);
+            return author;
         } catch(Exception e) {
             if(con!=null) con.closeConnection();
             throw new Exception();
@@ -91,7 +92,8 @@ public class Author {
 
 
         result.add("author", newAuthor);
-        if(con!=null) con.closeConnection(); return result.build().toString();
+        if(con!=null) con.closeConnection();
+        return result.build().toString();
     }
 
     public static String details(final int authid) {
