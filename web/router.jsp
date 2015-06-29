@@ -25,11 +25,21 @@
     int isAdmin = session.getAttribute("isAdmin") == null ? 0 : (Integer)session.getAttribute("isAdmin");
 
     System.err.println(session.getId() + " " + session.isNew() + " " + session.getAttribute("cid") + " " + session.getAttribute("isAdmin"));
-//    authcid = 2; isAdmin = 1;
+    //authcid = 2; isAdmin = 1;
+
+    ////// for show
+    if(session.getAttribute("logout") == null) {
+        authcid = 1;
+        isAdmin = 1;
+        session.setAttribute("cid", authcid);
+        session.setAttribute("isAdmin", isAdmin);
+    }
+    //////
 
         // GET /whoAmI
     if (dirs.length == 1 && dirs[0].equals("whoAmI")) {
         System.out.println("Forwarding to Customer.whoAmI()");
+
         String result = Customer.whoAmI(authcid, isAdmin, request.getRemoteAddr());
 
         if (result == null) {
@@ -65,7 +75,10 @@
         // POST /customers/logout
     } else if (dirs.length == 2 && dirs[0].equals("customers") && dirs[1].equals("logout") && verb.equals("POST")) {
         System.err.println("cid: " + sessionCid + " logged out");
-        session.invalidate();
+        //session.invalidate();
+        session.removeAttribute("cid");
+        session.removeAttribute("isAdmin");
+        session.setAttribute("logout", true);
 
         // signup
         // POST /customers/signup
