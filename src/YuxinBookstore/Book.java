@@ -72,11 +72,13 @@ public class Book {
             book.add("feedbacks", feedbacks);
 
 
-            sql = "SELECT I2.isbn, SUM(I2.amount) FROM ItemInOrder I1, ItemInOrder I2, Orders O1, Orders O2 WHERE " +
+            sql = "SELECT I2.isbn, SUM(I2.amount) as sales FROM ItemInOrder I1, ItemInOrder I2, Orders O1, Orders O2 WHERE " +
                     "O1.cid = O2.cid AND O1.orderid = I1.orderid AND O2.orderid = I2.orderid AND " +
                     "I1.isbn='" + isbn + "'" + " AND I2.isbn != '" + isbn + "'" +
                     " GROUP BY I2.isbn" +
+                    " ORDER BY sales DESC " +
                     " LIMIT 5 ";
+
 
             //System.err.println(sql);
 
