@@ -233,7 +233,7 @@ public class Author {
                 sales.add(authid, _sales);
             }
 
-            sql = "SELECT COUNT(DISTINCT I.isbn) AS total FROM ItemInOrder I, WrittenBy W, Orders O " +
+            sql = "SELECT COUNT(DISTINCT W.authid) AS total FROM ItemInOrder I, WrittenBy W, Orders O " +
                     "WHERE I.isbn = W.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed + "'";
             rs = con.stmt.executeQuery(sql);
             rs.next();
