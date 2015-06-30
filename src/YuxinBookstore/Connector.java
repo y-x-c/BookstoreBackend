@@ -12,7 +12,7 @@ public class Connector {
 //            String url = "jdbc:mysql://10.141.208.26/fudandbd33?useUnicode=true&characterEncoding=utf-8";
 			String userName = "fudandb";
 			String password = "fudandbpj";
-			String url = "jdbc:mysql://45.55.188.100/fudandb?useUnicode=true&characterEncoding=utf-8";
+			String url = "jdbc:mysql://chenyux.in/fudandb?useUnicode=true&characterEncoding=utf-8";
             Class.forName ("com.mysql.jdbc.Driver").newInstance();
             con = DriverManager.getConnection (url, userName, password);
 

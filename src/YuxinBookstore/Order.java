@@ -232,7 +232,7 @@ public class Order {
         try {
             // check available amount
             String sql = "SELECT B.isbn, B.title FROM Book B, Cart C WHERE C.cid = " + cid +
-                    " AND B.isbn = C.isbn AND B.copies < C.amount";
+                    " AND B.isbn = C.isbn AND (B.copies < C.amount OR C.amount < 0)";
 
             ResultSet rs = con.stmt.executeQuery(sql);
 
