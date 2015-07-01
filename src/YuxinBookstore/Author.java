@@ -48,7 +48,7 @@ public class Author {
         Connector con = null;
         try {
             con = new Connector();
-            String sql = "SELECT * from Author where authid = '" + authid + "'";
+            String sql = "SELECT * from Author where authid = " + authid;
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
             author = JSONAuthor(rs, author);
@@ -135,7 +135,7 @@ public class Author {
         Connector con = null;
         String sql = "SELECT * FROM Author A WHERE A.authname LIKE";
         name = Utility.sanitize(name);
-        sql += "'%" + name + "%'";
+        sql += "'%" + Utility.sanitize(name) + "%'";
         sql += " LIMIT " + limit;
 
         try {
@@ -213,7 +213,8 @@ public class Author {
         Connector con = null;
         try {
             String sql = "SELECT W.authid, SUM(I.amount) as sales FROM ItemInOrder I, WrittenBy W, Orders O " +
-                    "WHERE I.isbn = W.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed +
+                    "WHERE I.isbn = W.isbn AND O.orderid = I.orderid AND O.time >= '" + Utility.sanitize(st) +
+                    "' AND O.time <= '" + Utility.sanitize(ed) +
                     "' GROUP BY W.authid ORDER BY SUM(I.amount) DESC";
 
             sql += " LIMIT " + limit + " OFFSET " + offset;
@@ -234,7 +235,8 @@ public class Author {
             }
 
             sql = "SELECT COUNT(DISTINCT W.authid) AS total FROM ItemInOrder I, WrittenBy W, Orders O " +
-                    "WHERE I.isbn = W.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed + "'";
+                    "WHERE I.isbn = W.isbn AND O.orderid = I.orderid AND O.time >= '" +
+                    Utility.sanitize(st) + "' AND O.time <= '" + Utility.sanitize(ed) + "'";
             rs = con.stmt.executeQuery(sql);
             rs.next();
             JsonObjectBuilder meta = Json.createObjectBuilder();

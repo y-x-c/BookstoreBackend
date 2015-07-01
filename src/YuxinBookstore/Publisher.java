@@ -31,7 +31,7 @@ public class Publisher {
         Connector con = null;
         try {
             con = new Connector();
-            String sql = "SELECT * from Publisher where pid = '" + pid + "'";
+            String sql = "SELECT * from Publisher where pid = '" + Utility.sanitize(pid) + "'";
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
             publisher = JSONPublisher(rs, publisher);
@@ -194,7 +194,8 @@ public class Publisher {
         Connector con = null;
         try {
             String sql = "SELECT B.pid, SUM(I.amount) as sales FROM ItemInOrder I, Book B, Orders O " +
-                    "WHERE I.isbn = B.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed +
+                    "WHERE I.isbn = B.isbn AND O.orderid = I.orderid AND O.time >= '" + Utility.sanitize(st) +
+                    "' AND O.time <= '" + Utility.sanitize(ed) +
                     "' GROUP BY B.pid ORDER BY SUM(I.amount) DESC";
 
             sql += " LIMIT " + limit + " OFFSET " + offset;
@@ -215,7 +216,8 @@ public class Publisher {
             }
 
             sql = "SELECT COUNT(DISTINCT B.pid) AS total FROM ItemInOrder I, Book B, Orders O " +
-                    "WHERE I.isbn = B.isbn AND O.orderid = I.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed + "'";
+                    "WHERE I.isbn = B.isbn AND O.orderid = I.orderid AND O.time >= '" +
+                    Utility.sanitize(st) + "' AND O.time <= '" + Utility.sanitize(ed) + "'";
             rs = con.stmt.executeQuery(sql);
             rs.next();
 

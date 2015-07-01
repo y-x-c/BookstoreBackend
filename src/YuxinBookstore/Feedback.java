@@ -40,7 +40,7 @@ public class Feedback {
             String sql = "SELECT F.fid, F.isbn, F.cid, F.score, F.comment, F.time, " +
                     "(SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness, " +
                     "(SELECT U.rating FROM Usefulness U WHERE U.fid = F.fid AND U.cid = " + cid + ") AS opinion " +
-                    "FROM Feedback F WHERE isbn = '" + isbn + "' AND cid = " + cid;
+                    "FROM Feedback F WHERE isbn = '" + Utility.sanitize(isbn) + "' AND cid = " + cid;
 
             ResultSet rs = null;
 
@@ -85,7 +85,7 @@ public class Feedback {
         Connector con = null;
         try {
             String sql = "SELECT COUNT(*) AS amount, F.score FROM Feedback F" +
-                    " WHERE F.isbn = '" + isbn + "'" +
+                    " WHERE F.isbn = '" + Utility.sanitize(isbn) + "'" +
                     " GROUP BY score ORDER BY score DESC";
 
 //            System.out.println(sql);
@@ -142,7 +142,7 @@ public class Feedback {
 
             String sql = "SELECT *, (SELECT AVG(U.rating) FROM Usefulness U WHERE U.fid = F.fid) AS usefulness, " +
                     "(SELECT U.rating FROM Usefulness U WHERE U.fid = F.fid AND U.cid = " + authcid + ") AS opinion " +
-                    " FROM Feedback F WHERE isbn = '" + isbn + "'";
+                    " FROM Feedback F WHERE isbn = '" + Utility.sanitize(isbn) + "'";
 
             if (orderBy == 0) sql += " ORDER BY usefulness DESC";
             if (orderBy == 1) sql += " ORDER BY F.time DESC";
@@ -158,7 +158,7 @@ public class Feedback {
                 feedbacks.add(JSONFeedback(rs, feedback));
             }
 
-            sql = "SELECT COUNT(*) AS total FROM Feedback F WHERE isbn = '" + isbn + "'";
+            sql = "SELECT COUNT(*) AS total FROM Feedback F WHERE isbn = '" + Utility.sanitize(isbn) + "'";
             rs = con.stmt.executeQuery(sql);
             rs.next();
             JsonObjectBuilder meta = Json.createObjectBuilder();

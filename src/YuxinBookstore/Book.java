@@ -49,7 +49,7 @@ public class Book {
             int pid = rs.getInt("pid");
             book.add("publisher", pid);
 
-            sql = "SELECT * FROM WrittenBy W WHERE W.isbn = '" + isbn + "'";
+            sql = "SELECT * FROM WrittenBy W WHERE W.isbn = '" + Utility.sanitize(isbn) + "'";
             con2.newStatement();
             ResultSet rs2 = con2.stmt.executeQuery(sql);
 
@@ -60,7 +60,7 @@ public class Book {
             }
             book.add("authors", authors);
 
-            sql = "SELECT fid FROM Feedback WHERE isbn = '" + isbn + "'";
+            sql = "SELECT fid FROM Feedback WHERE isbn = '" + Utility.sanitize(isbn) + "'";
 
             JsonArrayBuilder feedbacks = Json.createArrayBuilder();
             con2.newStatement();
@@ -74,7 +74,7 @@ public class Book {
 
             sql = "SELECT I2.isbn, SUM(I2.amount) as sales FROM ItemInOrder I1, ItemInOrder I2, Orders O1, Orders O2 WHERE " +
                     "O1.cid = O2.cid AND O1.orderid = I1.orderid AND O2.orderid = I2.orderid AND " +
-                    "I1.isbn='" + isbn + "'" + " AND I2.isbn != '" + isbn + "'" +
+                    "I1.isbn='" + Utility.sanitize(isbn) + "'" + " AND I2.isbn != '" + Utility.sanitize(isbn) + "'" +
                     " GROUP BY I2.isbn" +
                     " ORDER BY sales DESC " +
                     " LIMIT 5 ";
@@ -104,7 +104,7 @@ public class Book {
         Connector con = null;
         try {
             con = new Connector();
-            String sql = "SELECT * from Book where isbn = '" + ISBN + "'";
+            String sql = "SELECT * from Book where isbn = '" + Utility.sanitize(ISBN) + "'";
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
             book = JSONBook(rs, book);
@@ -185,7 +185,8 @@ public class Book {
 
             String sql = "INSERT INTO Book (isbn, title, pid, copies, price, pubdate, " +
                     "format, summary, subject, keyword, subtitle, img) VALUES ";
-            sql += "('" + isbn + "','" + title + "'," + pid + "," + copies + "," + price + ",'" + pubdate + "',";
+            sql += "('" + Utility.sanitize(isbn) + "','" + Utility.sanitize(title) + "',";
+            sql += pid + "," + copies + "," + price + ",'" + Utility.sanitize(pubdate) + "',";
             sql += Utility.genStringAttr(format, ",");
             sql += Utility.genStringAttr(summary, ",");
             sql += Utility.genStringAttr(subject, ",");
@@ -207,7 +208,7 @@ public class Book {
                 else first = false;
                 String _authid = authid.toString();
                 _authid = _authid.substring(1, _authid.length() - 1);
-                sql += "('" + isbn + "'," + _authid + ")";
+                sql += "('" + Utility.sanitize(isbn) + "'," + _authid + ")";
             }
             sql += " ON DUPLICATE KEY UPDATE isbn=isbn";
 
@@ -238,10 +239,10 @@ public class Book {
             for (String _keyWord : keyWords) {
                 System.err.println(_keyWord);
                 String keyWord = Utility.sanitize(_keyWord);
-                conditions += " AND (" + "B.title LIKE '%" + keyWord + "%' OR B.subtitle like '%" + keyWord +
-                        "%' OR A.authname like '%" + keyWord + "%' OR B.isbn like '%" + keyWord +
-                        "%' OR B.summary LIKE '%" + keyWord + "%' OR P.pubname LIKE '%" + keyWord +
-                        "%' OR B.keyword LIKE '%" + keyWord + "%' OR B.subject LIKE '%" + keyWord + "%'" + ") ";
+                conditions += " AND (" + "B.title LIKE '%" + Utility.sanitize(keyWord) + "%' OR B.subtitle like '%" + Utility.sanitize(keyWord) +
+                        "%' OR A.authname like '%" + Utility.sanitize(keyWord) + "%' OR B.isbn like '%" + Utility.sanitize(keyWord) +
+                        "%' OR B.summary LIKE '%" + Utility.sanitize(keyWord) + "%' OR P.pubname LIKE '%" + Utility.sanitize(keyWord) +
+                        "%' OR B.keyword LIKE '%" + Utility.sanitize(keyWord) + "%' OR B.subject LIKE '%" + Utility.sanitize(keyWord) + "%'" + ") ";
             }
 
             con = new Connector();
@@ -320,13 +321,13 @@ public class Book {
                 String conj = condition.getString("conj");
 
                 if (term.equals("Title"))
-                    conditions += " title LIKE '%" + included + "%'";
+                    conditions += " title LIKE '%" + Utility.sanitize(included) + "%'";
                 else if (term.equals("Author"))
-                    conditions += " authname LIKE '%" + included + "%'";
+                    conditions += " authname LIKE '%" + Utility.sanitize(included) + "%'";
                 else if (term.equals("Publisher"))
-                    conditions += " pubname LIKE '%" + included + "%'";
+                    conditions += " pubname LIKE '%" + Utility.sanitize(included) + "%'";
                 else if (term.equals("Subject"))
-                    conditions += " subject LIKE '%" + included + "%'";
+                    conditions += " subject LIKE '%" + Utility.sanitize(included) + "%'";
                 else {if(con!=null) con.closeConnection(); return null;}
 
                 if (i != advanced.size() - 1) {
@@ -402,7 +403,7 @@ public class Book {
         Connector con = null;
         try {
             String sql = "SELECT isbn, SUM(amount) as sales FROM ItemInOrder I, Orders O " +
-                    "WHERE I.orderid = O.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed +
+                    "WHERE I.orderid = O.orderid AND O.time >= '" + Utility.sanitize(st) + "' AND O.time <= '" + Utility.sanitize(ed) +
                     "' GROUP BY isbn ORDER BY SUM(amount) DESC";
             sql += " LIMIT " + limit + " OFFSET " + offset;
 //            System.err.println(sql);
@@ -421,7 +422,7 @@ public class Book {
             }
 
             sql = "SELECT COUNT(DISTINCT isbn) AS total FROM ItemInOrder I, Orders O " +
-                    "WHERE I.orderid = O.orderid AND O.time >= '" + st + "' AND O.time <= '" + ed + "'";
+                    "WHERE I.orderid = O.orderid AND O.time >= '" + Utility.sanitize(st) + "' AND O.time <= '" + Utility.sanitize(ed) + "'";
             rs = con.stmt.executeQuery(sql);
             rs.next();
             JsonObjectBuilder meta = Json.createObjectBuilder();

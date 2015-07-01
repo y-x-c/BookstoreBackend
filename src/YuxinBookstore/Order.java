@@ -153,7 +153,7 @@ public class Order {
 
         try {
             String sql = "SELECT COUNT(*) AS orders, DATE_FORMAT(O.time, '%Y-%m-%d') AS day FROM Orders O " +
-                    " WHERE " + "O.time >= '" + st + "' AND O.time <= '" + ed + "'" +
+                    " WHERE " + "O.time >= '" + Utility.sanitize(st) + "' AND O.time <= '" + Utility.sanitize(ed) + "'" +
                     " GROUP BY day ORDER BY day ASC";
 
 //            System.out.println(sql);
@@ -218,8 +218,7 @@ public class Order {
         JsonObject order = payload.getJsonObject("order");
         String addr = order.getString("address");
 
-        //////////////// TBD
-        final int cid = Integer.parseInt(order.getString("customer"));
+        final int cid = sessionCid;
 
         Connector con = null;
         try {
@@ -252,7 +251,7 @@ public class Order {
             System.err.println(sql);
             con.stmt.execute(sql);
 
-            sql = "INSERT INTO Orders (time, cid, addr) VALUES (NOW(), " + cid + ", '" + addr + "')";
+            sql = "INSERT INTO Orders (time, cid, addr) VALUES (NOW(), " + cid + ", '" + Utility.sanitize(addr) + "')";
             System.err.println(sql);
             con.stmt.execute(sql);
 
@@ -300,14 +299,14 @@ public class Order {
             int amount = cart.getInt("amount");
             JsonObjectBuilder result = Json.createObjectBuilder();
 
-            String sql = "INSERT INTO Cart (cid, isbn, amount) VALUES (" + cid + ",'" + isbn + "'," + amount + ") " +
+            String sql = "INSERT INTO Cart (cid, isbn, amount) VALUES (" + cid + ",'" + Utility.sanitize(isbn) + "'," + amount + ") " +
                     "ON DUPLICATE KEY UPDATE amount = VALUES(amount)";
 //            System.err.println(sql);
 
             con = new Connector();
             con.stmt.execute(sql);
 
-            sql = "SELECT * FROM Cart WHERE isbn = '" + isbn + "' AND cid = " + cid;
+            sql = "SELECT * FROM Cart WHERE isbn = '" + Utility.sanitize(isbn) + "' AND cid = " + cid;
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
 
@@ -368,7 +367,7 @@ public class Order {
     public static String cartDetails(final int cid, String isbn) {
         Connector con = null;
         try {
-            String sql = "SELECT * FROM Cart C WHERE C.cid = " + cid + " AND C.isbn = '" + isbn + "'";
+            String sql = "SELECT * FROM Cart C WHERE C.cid = " + cid + " AND C.isbn = '" + Utility.sanitize(isbn) + "'";
             //System.err.println(sql);
             con = new Connector();
 

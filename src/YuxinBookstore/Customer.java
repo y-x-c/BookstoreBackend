@@ -73,7 +73,7 @@ public class Customer {
         try {
             con = new Connector();
 
-            String sql = "SELECT * from Customer where cid = '" + cid + "'";
+            String sql = "SELECT * from Customer where cid = " + cid;
             ResultSet rs = con.stmt.executeQuery(sql);
             rs.next();
 
@@ -224,7 +224,7 @@ public class Customer {
     public static String whoAmI(int sessionCid, int isAdmin, String ip) {
         Connector con = null;
         try {
-            String sql = "INSERT INTO History(time, ip, cid) VALUES( NOW(), '" + ip + "', " + sessionCid + ")";
+            String sql = "INSERT INTO History(time, ip, cid) VALUES( NOW(), '" + Utility.sanitize(ip) + "', " + sessionCid + ")";
             con = new Connector();
             con.stmt.execute(sql);
         } catch (Exception e) {
@@ -313,7 +313,7 @@ public class Customer {
 
             con.stmt.executeUpdate(sql);
 
-            sql = "SELECT cid FROM Customer WHERE username = \"" + username + "\"";
+            sql = "SELECT cid FROM Customer WHERE username = \"" + Utility.sanitize(username) + "\"";
 
             ResultSet rs = con.stmt.executeQuery(sql);
 
@@ -342,7 +342,7 @@ public class Customer {
         Connector con = null;
         try {
             String sql = "SELECT COUNT(*) AS visits, DATE_FORMAT(H.time, '%Y-%m-%d') AS day FROM History H " +
-                    " WHERE " + "H.time >= '" + st + "' AND H.time <= '" + ed + "'" +
+                    " WHERE " + "H.time >= '" + Utility.sanitize(st) + "' AND H.time <= '" + Utility.sanitize(ed) + "'" +
                     " GROUP BY day ORDER BY day ASC";
 
 //            System.out.println(sql);
